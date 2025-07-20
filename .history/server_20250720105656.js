@@ -34,112 +34,16 @@ app.use(express.static(path.join(__dirname, 'public')));
 // Initialize trading bot
 const tradingBot = new TradingBot();
 
-// Add news API endpoint - This exposes the same news data used by the trading bot
+// Add news API endpoint
 app.get('/api/news', async (req, res) => {
     try {
         const limit = req.query.limit ? parseInt(req.query.limit) : 10;
-        const watchlistFilter = req.query.watchlist === 'true';
-        
-        // Get the news that is being analyzed by the trading bot
-        // This ensures the dashboard shows the SAME news data that influences trading decisions
-        if (watchlistFilter && tradingBot.watchlist && tradingBot.watchlist.length > 0) {
-            // Get news specifically for the bot's active watchlist
-            const symbols = tradingBot.watchlist.slice(0, 5); // Limit to top 5 symbols
-            const newsImpact = await newsService.getNewsImpact(symbols);
-            
-            // Flatten the news articles from different symbols with their sentiment scores
-            const articles = [];
-            for (const symbol in newsImpact) {
-                if (newsImpact[symbol].recentNews) {
-                    newsImpact[symbol].recentNews.forEach(article => {
-                        articles.push({
-                            ...article,
-                            symbol,
-                            sentiment: newsImpact[symbol].sentiment,
-                            sentimentScore: newsImpact[symbol].score,
-                            tradingImpact: newsImpact[symbol].score > 0.5 ? 'Strong Bullish' : 
-                                           newsImpact[symbol].score > 0 ? 'Mildly Bullish' :
-                                           newsImpact[symbol].score < -0.5 ? 'Strong Bearish' :
-                                           newsImpact[symbol].score < 0 ? 'Mildly Bearish' : 'Neutral'
-                        });
-                    });
-                }
-            }
-            
-            if (articles.length > 0) {
-                res.json({ articles: articles.slice(0, limit) });
-                return;
-            }
-        }
-        
-        // Fall back to general market news if we don't have watchlist news
         const newsData = await newsService.getMarketNews(limit);
-        
-        // If we got data back and it has articles, return it
-        if (newsData && newsData.length > 0) {
-            // Use the same sentiment analysis the bot uses
-            const analyzedArticles = await newsService.analyzeNewsSentiment(newsData);
-            res.json({ articles: analyzedArticles });
-            return;
-        }
-        
-        throw new Error('No news articles available');
+        res.json(newsData);
     } catch (error) {
         console.error('Error fetching news:', error);
         // Return sample news data
         res.json(getSampleNewsData());
-    }
-});
-
-// New endpoint for stock-specific news with symbol detection
-app.get('/api/stock-news', async (req, res) => {
-    try {
-        const limit = req.query.limit ? parseInt(req.query.limit) : 10;
-        
-        // First check if we have a watchlist from the trading bot
-        let articles = [];
-        
-        if (tradingBot.watchlist && tradingBot.watchlist.length > 0) {
-            // Get news for top watchlist symbols
-            const symbols = tradingBot.watchlist.slice(0, 5);
-            
-            // Get the news that's affecting the trading bot's decisions
-            for (const symbol of symbols) {
-                const stockNews = await newsService.getStockNews(symbol, 2);
-                articles = articles.concat(stockNews.map(article => ({...article, relatedSymbol: symbol})));
-            }
-        }
-        
-        // If we don't have enough articles from watchlist, get general market news
-        if (articles.length < limit) {
-            const generalNews = await newsService.getMarketNews(limit - articles.length);
-            articles = articles.concat(generalNews);
-        }
-        
-        // Apply stock symbol detection and sentiment analysis to all articles
-        const analyzedArticles = await newsService.analyzeNewsWithSymbols(articles);
-        
-        // For demonstration, ensure we have some symbols if none were detected
-        const processedArticles = analyzedArticles.map(article => {
-            // If no symbols were detected and we have a related symbol, use that
-            if (article.detectedSymbols.length === 0 && article.relatedSymbol) {
-                article.detectedSymbols = [article.relatedSymbol];
-            }
-            
-            // Ensure we have at least some impact score
-            if (!article.tradingImpact) {
-                article.tradingImpact = article.sentiment === 'positive' ? 'Mildly Bullish' : 
-                                      article.sentiment === 'negative' ? 'Mildly Bearish' : 'Neutral';
-            }
-            
-            return article;
-        });
-        
-        res.json({ articles: processedArticles.slice(0, limit) });
-    } catch (error) {
-        console.error('Error fetching stock news:', error);
-        // Return sample data with stock symbols
-        res.json(getSampleStockNewsData());
     }
 });
 
@@ -182,65 +86,6 @@ function getSampleNewsData() {
                 url: 'https://www.reuters.com/markets/us/',
                 published_at: new Date(now.setHours(now.getHours() - 6)).toISOString(),
                 sentiment: 'negative'
-            }
-        ]
-    };
-}
-
-// Helper function to get sample stock news data with symbols
-function getSampleStockNewsData() {
-    const now = new Date();
-    return {
-        articles: [
-            {
-                title: 'AAPL Surges 3% on Strong iPhone Sales Reports',
-                summary: 'Apple (AAPL) shares climbed 3% today following reports that iPhone sales are exceeding analyst expectations in Asian markets, particularly in China.',
-                url: 'https://www.cnbc.com/markets/aapl',
-                published_at: new Date(now.setHours(now.getHours() - 1)).toISOString(),
-                sentiment: 'positive',
-                sentimentScore: 2.5,
-                detectedSymbols: ['AAPL'],
-                tradingImpact: 'Strong Bullish'
-            },
-            {
-                title: 'MSFT and GOOGL Lead Cloud Computing Growth',
-                summary: 'Microsoft (MSFT) and Alphabet (GOOGL) reported significant growth in their cloud divisions, with Azure and Google Cloud both exceeding quarterly revenue forecasts by over 15%.',
-                url: 'https://www.bloomberg.com/markets/tech',
-                published_at: new Date(now.setHours(now.getHours() - 3)).toISOString(),
-                sentiment: 'positive',
-                sentimentScore: 1.8,
-                detectedSymbols: ['MSFT', 'GOOGL'],
-                tradingImpact: 'Mildly Bullish'
-            },
-            {
-                title: 'TSLA Faces Production Challenges in New Factory',
-                summary: 'Tesla (TSLA) is experiencing production delays at its new European gigafactory, which could impact Q3 delivery targets. The company remains optimistic about meeting annual goals.',
-                url: 'https://www.reuters.com/markets/tsla',
-                published_at: new Date(now.setHours(now.getHours() - 5)).toISOString(),
-                sentiment: 'negative',
-                sentimentScore: -1.2,
-                detectedSymbols: ['TSLA'],
-                tradingImpact: 'Mildly Bearish'
-            },
-            {
-                title: 'JPM and BAC Prepare for Potential Fed Rate Cuts',
-                summary: 'Major banks including JPMorgan Chase (JPM) and Bank of America (BAC) are adjusting their strategies in anticipation of Fed rate cuts that could pressure net interest margins.',
-                url: 'https://www.ft.com/markets/banks',
-                published_at: new Date(now.setHours(now.getHours() - 7)).toISOString(),
-                sentiment: 'neutral',
-                sentimentScore: -0.2,
-                detectedSymbols: ['JPM', 'BAC'],
-                tradingImpact: 'Neutral'
-            },
-            {
-                title: 'AMZN Expands Healthcare Initiative with New Acquisition',
-                summary: 'Amazon (AMZN) announced the acquisition of a healthcare technology startup, expanding its footprint in the telehealth sector. The move is seen as part of a broader strategy to disrupt traditional healthcare delivery.',
-                url: 'https://www.techcrunch.com/amazon-health',
-                published_at: new Date(now.setHours(now.getHours() - 9)).toISOString(),
-                sentiment: 'positive',
-                sentimentScore: 1.5,
-                detectedSymbols: ['AMZN'],
-                tradingImpact: 'Mildly Bullish'
             }
         ]
     };
@@ -415,119 +260,20 @@ app.get('/api/trending', async (req, res) => {
     }
 });
 
-// Add news sentiment impact endpoint - This shows exactly how news affects trading decisions
-app.get('/api/news-sentiment', async (req, res) => {
-    try {
-        // Get watchlist symbols
-        const watchlist = tradingBot.watchlist || [];
-        if (watchlist.length === 0) {
-            throw new Error('Watchlist not available');
-        }
-        
-        // Get the actual news sentiment data that the bot uses for trading decisions
-        const newsImpact = await newsService.getNewsImpact(watchlist);
-        
-        // Format the data for the frontend
-        const sentimentData = [];
-        for (const symbol in newsImpact) {
-            const impact = newsImpact[symbol];
-            sentimentData.push({
-                symbol: symbol,
-                sentiment: impact.sentiment,
-                score: impact.score,
-                articles: impact.articles,
-                tradingFactor: Math.abs(impact.score) > 0.5 ? 'High' : 
-                              Math.abs(impact.score) > 0.2 ? 'Medium' : 'Low',
-                tradingDirection: impact.score > 0 ? 'Bullish' : 
-                                 impact.score < 0 ? 'Bearish' : 'Neutral',
-                recentHeadlines: impact.recentNews ? impact.recentNews.map(article => ({
-                    title: article.headline || article.title,
-                    source: article.source || article.author || 'Unknown',
-                    sentiment: article.sentiment
-                })) : []
-            });
-        }
-        
-        res.json({
-            success: true,
-            timestamp: new Date().toISOString(),
-            sentimentData: sentimentData.sort((a, b) => Math.abs(b.score) - Math.abs(a.score)) // Sort by impact strength
-        });
-        
-    } catch (error) {
-        console.error('Error fetching news sentiment impact:', error);
-        // Return sample data
-        res.json({
-            success: true,
-            timestamp: new Date().toISOString(),
-            sentimentData: [
-                {
-                    symbol: 'AAPL',
-                    sentiment: 'positive',
-                    score: 0.7,
-                    articles: 5,
-                    tradingFactor: 'High',
-                    tradingDirection: 'Bullish',
-                    recentHeadlines: [{
-                        title: 'Apple Revenue Exceeds Expectations',
-                        source: 'Market News',
-                        sentiment: 'positive'
-                    }]
-                },
-                {
-                    symbol: 'TSLA',
-                    sentiment: 'negative',
-                    score: -0.4,
-                    articles: 3,
-                    tradingFactor: 'Medium',
-                    tradingDirection: 'Bearish',
-                    recentHeadlines: [{
-                        title: 'Tesla Factory Delays Production',
-                        source: 'Auto News',
-                        sentiment: 'negative'
-                    }]
-                },
-                {
-                    symbol: 'MSFT',
-                    sentiment: 'positive',
-                    score: 0.3,
-                    articles: 2,
-                    tradingFactor: 'Medium',
-                    tradingDirection: 'Bullish',
-                    recentHeadlines: [{
-                        title: 'Microsoft Cloud Growth Continues',
-                        source: 'Tech Times',
-                        sentiment: 'positive'
-                    }]
-                }
-            ]
-        });
-    }
-});
-
 // Add performance endpoint
-app.get('/api/performance', async (req, res) => {
+app.get('/api/performance', (req, res) => {
     try {
-        // Try to get real performance data from the trading bot
-        const performance = await tradingBot.calculatePerformance();
-        
-        // Add additional performance metrics based on real data
-        const win_rate = tradingBot.totalTrades > 0 ? 68 : 0; // Placeholder
-        
         res.json({
             success: true,
             performance: {
-                total_return: performance?.dayChange || 14.5,
-                daily_return: performance?.dayChange || 0.85,
+                total_return: 14.5,
+                daily_return: 0.85,
                 monthly_return: 3.2,
                 max_drawdown: -4.8,
                 sharpe_ratio: 1.72,
                 sortino_ratio: 2.04,
-                win_rate: win_rate,
-                profit_factor: 2.15,
-                total_trades: tradingBot.totalTrades || 24,
-                buying_power: performance?.buyingPower || 0,
-                total_equity: performance?.totalEquity || 0
+                win_rate: 68,
+                profit_factor: 2.15
             }
         });
     } catch (error) {
@@ -542,8 +288,7 @@ app.get('/api/performance', async (req, res) => {
                 sharpe_ratio: 1.72,
                 sortino_ratio: 2.04,
                 win_rate: 68,
-                profit_factor: 2.15,
-                total_trades: tradingBot.totalTrades || 24
+                profit_factor: 2.15
             }
         });
     }

@@ -161,49 +161,6 @@
         .tab-content.active {
             display: block !important;
         }
-        
-        /* Status indicator for strategies */
-        .status-monitoring {
-            background-color: #f9a825;
-            color: #000;
-        }
-        
-        /* Make sure the strategy items look consistent */
-        .strategy-item, .sentiment-item {
-            background: rgba(0, 0, 0, 0.2);
-            border: 1px solid #333333;
-            border-radius: 6px;
-            padding: 15px;
-            margin-bottom: 15px;
-        }
-        
-        /* Style for news sentiment display */
-        .strategy-header {
-            display: flex;
-            justify-content: space-between;
-            border-bottom: 1px solid #333;
-            padding-bottom: 10px;
-            margin-bottom: 15px;
-        }
-        
-        .sentiment-stocks {
-            margin-top: 15px;
-        }
-        
-        .subheader {
-            font-size: 0.85em;
-            color: #00ff00;
-            margin-bottom: 10px;
-            text-transform: uppercase;
-        }
-        
-        .news-headline {
-            font-size: 0.8em;
-            color: #888;
-            margin-top: 10px;
-            font-style: italic;
-            line-height: 1.3;
-        }
 
         .card {
             background: #111111;
@@ -518,109 +475,6 @@
             background: #00ff00;
             border-radius: 2px;
         }
-        
-        /* News styles */
-        .news-item {
-            background: rgba(0, 0, 0, 0.2);
-            border: 1px solid #333333;
-            border-radius: 8px;
-            padding: 15px;
-            margin-bottom: 15px;
-            box-shadow: 0 2px 8px rgba(0, 255, 0, 0.1);
-            transition: all 0.3s ease;
-        }
-        
-        .news-item:hover {
-            box-shadow: 0 4px 12px rgba(0, 255, 0, 0.2);
-            transform: translateY(-2px);
-        }
-        
-        .news-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 10px;
-        }
-        
-        .news-title {
-            font-size: 1.1em;
-            font-weight: bold;
-            color: #ffffff;
-            flex: 1;
-        }
-        
-        .news-date {
-            font-size: 0.7em;
-            color: #999999;
-            white-space: nowrap;
-            margin-left: 10px;
-        }
-        
-        .news-summary {
-            font-size: 0.9em;
-            color: #cccccc;
-            line-height: 1.4;
-            margin-bottom: 12px;
-        }
-        
-        .news-analysis {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            margin-top: 10px;
-            background: rgba(0, 0, 0, 0.1);
-            border-radius: 6px;
-            padding: 10px;
-        }
-        
-        .news-symbols {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 6px;
-            margin-bottom: 8px;
-        }
-        
-        .stock-symbol {
-            background: rgba(0, 100, 0, 0.6);
-            color: #ffffff;
-            font-weight: bold;
-            padding: 3px 8px;
-            border-radius: 4px;
-            font-size: 0.85em;
-            border: 1px solid #00ff00;
-        }
-        
-        .news-metrics {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 15px;
-        }
-        
-        .news-metric {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-        
-        .metric-label {
-            font-size: 0.8em;
-            color: #999999;
-        }
-        
-        .news-link {
-            display: inline-block;
-            color: #00ff00;
-            text-decoration: none;
-            font-size: 0.8em;
-            margin-top: 10px;
-            padding: 4px 0;
-            transition: all 0.2s ease;
-        }
-        
-        .news-link:hover {
-            color: #ffffff;
-            text-decoration: underline;
-        }
     </style>
 </head>
 <body>
@@ -736,21 +590,10 @@
         let totalPnL = 0;
 
         // Tab functionality
-        function showTab(event, tabName) {
+        function showTab(tabName) {
             console.log('Tab click: switching to', tabName);
             
             try {
-                // If tabName is null, get it from the event target
-                if (!tabName && event && event.target) {
-                    tabName = event.target.getAttribute('data-tab');
-                }
-                
-                // Make sure we have a valid tab name
-                if (!tabName) {
-                    console.error('No tab name provided');
-                    return;
-                }
-                
                 // 1. Hide ALL tab contents first
                 document.querySelectorAll('.tab-content').forEach(tab => {
                     tab.style.display = 'none';
@@ -1106,79 +949,54 @@
         // Load sentiment analysis
         async function loadSentimentAnalysis() {
             try {
-                // Try to fetch real trading bot news sentiment data with a timeout
+                // Try to fetch real data with a timeout
                 const controller = new AbortController();
                 const timeoutId = setTimeout(() => controller.abort(), 2000); // 2 second timeout
                 
                 try {
-                    // Use the new news-sentiment endpoint that gets data directly from the trading bot
-                    const response = await fetch('/api/news-sentiment', { signal: controller.signal });
+                    const response = await fetch('/api/news?limit=20', { signal: controller.signal });
                     clearTimeout(timeoutId);
                     const data = await response.json();
                     
-                    if (data.success && data.sentimentData && data.sentimentData.length > 0) {
-                        // Calculate overall sentiment from the bot's perspective
-                        const sentimentHTML = data.sentimentData.map(item => {
-                            const sentimentClass = item.sentiment === 'positive' ? 'positive' : 
-                                                  item.sentiment === 'negative' ? 'negative' : 'neutral';
-                                                  
-                            return `
-                                <div class="sentiment-item">
-                                    <div class="order-header">
-                                        <span class="order-symbol">${item.symbol}</span>
-                                        <span class="metric-value ${sentimentClass}">${item.tradingDirection.toUpperCase()}</span>
-                                    </div>
-                                    <div class="metric">
-                                        <span class="metric-label">Impact</span>
-                                        <span class="metric-value">${item.tradingFactor}</span>
-                                    </div>
-                                    <div class="metric">
-                                        <span class="metric-label">Articles</span>
-                                        <span class="metric-value">${item.articles}</span>
-                                    </div>
-                                    ${item.recentHeadlines && item.recentHeadlines.length > 0 ? 
-                                    `<div class="news-headline">${item.recentHeadlines[0].title}</div>` : ''}
-                                </div>
-                            `;
-                        }).join('');
+                    if (data.articles && data.articles.length > 0) {
+                        // Analyze sentiment from news articles
+                        let bullishCount = 0;
+                        let bearishCount = 0;
+                        let neutralCount = 0;
                         
-                        // Calculate weighted sentiment scores for the bot's overall strategy
-                        const positiveItems = data.sentimentData.filter(i => i.sentiment === 'positive');
-                        const negativeItems = data.sentimentData.filter(i => i.sentiment === 'negative');
-                        const neutralItems = data.sentimentData.filter(i => i.sentiment === 'neutral');
+                        data.articles.forEach(article => {
+                            const sentiment = (article.sentiment || 'neutral').toLowerCase();
+                            if (sentiment === 'positive' || sentiment === 'bullish') bullishCount++;
+                            else if (sentiment === 'negative' || sentiment === 'bearish') bearishCount++;
+                            else neutralCount++;
+                        });
                         
-                        const totalWeight = data.sentimentData.reduce((sum, i) => sum + Math.abs(i.score || 0), 0);
-                        const overallScore = totalWeight > 0 ? 
-                            data.sentimentData.reduce((sum, i) => sum + (i.score || 0), 0) / data.sentimentData.length : 0;
-                            
+                        const totalArticles = data.articles.length;
+                        const bullishPercent = (bullishCount / totalArticles * 100);
+                        const bearishPercent = (bearishCount / totalArticles * 100);
+                        
                         let overallSentiment = 'NEUTRAL';
                         let sentimentClass = 'neutral';
                         let sentimentScore = 5.0;
                         
-                        if (overallScore > 0.2) {
+                        if (bullishPercent > bearishPercent + 20) {
                             overallSentiment = 'BULLISH';
                             sentimentClass = 'positive';
-                            sentimentScore = 5.0 + overallScore * 5;
-                        } else if (overallScore < -0.2) {
+                            sentimentScore = 5.0 + (bullishPercent - bearishPercent) / 10;
+                        } else if (bearishPercent > bullishPercent + 20) {
                             overallSentiment = 'BEARISH';
                             sentimentClass = 'negative';
-                            sentimentScore = 5.0 + overallScore * 5;
+                            sentimentScore = 5.0 - (bearishPercent - bullishPercent) / 10;
                         }
                         
                         document.getElementById('sentimentAnalysis').innerHTML = `
-                            <div class="strategy-header">
-                                <div>
-                                    <span class="metric-label">Bot Trading Signal</span>
-                                    <span class="metric-value ${sentimentClass}">${overallSentiment}</span>
-                                </div>
-                                <div>
-                                    <span class="metric-label">News Impact Score</span>
-                                    <span class="metric-value ${sentimentClass}">${sentimentScore.toFixed(1)}/10</span>
-                                </div>
+                            <div class="metric">
+                                <span class="metric-label">Overall Sentiment</span>
+                                <span class="metric-value ${sentimentClass}">${overallSentiment}</span>
                             </div>
-                            <div class="sentiment-stocks">
-                                <div class="subheader">Sentiment By Symbol</div>
-                                ${sentimentHTML}
+                            <div class="metric">
+                                <span class="metric-label">News Score</span>
+                                <span class="metric-value ${sentimentClass}">${sentimentScore.toFixed(1)}/10</span>
                             </div>
                             <div class="metric">
                                 <span class="metric-label">Bullish Articles</span>
@@ -1741,12 +1559,12 @@
         // Load market news
         async function loadMarketNews() {
             try {
-                // Try to fetch enhanced news data with stock symbol detection
+                // Try to fetch real news data with a timeout
                 const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 2500); // 2.5 second timeout
+                const timeoutId = setTimeout(() => controller.abort(), 2000); // 2 second timeout
                 
                 try {
-                    const response = await fetch('/api/stock-news?limit=10', { signal: controller.signal });
+                    const response = await fetch('/api/news?limit=10', { signal: controller.signal });
                     clearTimeout(timeoutId);
                     const data = await response.json();
                     
@@ -1754,56 +1572,26 @@
                     
                     if (data.articles && data.articles.length > 0) {
                         data.articles.forEach(article => {
-                            // Get sentiment info
                             const sentiment = article.sentiment || 'NEUTRAL';
                             const sentimentClass = sentiment.toLowerCase() === 'positive' ? 'positive' : 
                                                  sentiment.toLowerCase() === 'negative' ? 'negative' : 'neutral';
                             
-                            // Get trading impact class for color coding
-                            const impactClass = article.tradingImpact?.toLowerCase().includes('bullish') ? 'positive' : 
-                                              article.tradingImpact?.toLowerCase().includes('bearish') ? 'negative' : 'neutral';
-                            
-                            // Format the article title, highlighting detected stock symbols
-                            let title = article.headline || article.title || 'Untitled';
-                            
-                            // Create HTML for stock symbol badges
-                            const symbolBadges = (article.detectedSymbols && article.detectedSymbols.length > 0) 
-                                ? article.detectedSymbols.map(symbol => 
-                                    `<span class="stock-symbol">${symbol}</span>`).join(' ')
-                                : '';
-                            
                             newsHTML += `
-                                <div class="news-item">
-                                    <div class="news-header">
-                                        <div class="news-title">${title}</div>
-                                        <div class="news-date">
-                                            ${new Date(article.published_at || article.publishedAt).toLocaleString()}
-                                        </div>
+                                <div class="order-item">
+                                    <div class="order-header">
+                                        <span class="order-symbol">${article.headline || article.title}</span>
+                                        <span style="font-size: 0.7em; color: #888;">
+                                            ${new Date(article.published_at || article.publishedAt).toLocaleTimeString()}
+                                        </span>
                                     </div>
-                                    
-                                    <div class="news-summary">
+                                    <div style="font-size: 0.85em; color: #ccc; margin: 8px 0;">
                                         ${(article.summary || article.description || 'No summary available').substring(0, 150)}...
                                     </div>
-                                    
-                                    <div class="news-analysis">
-                                        ${symbolBadges ? `<div class="news-symbols">${symbolBadges}</div>` : ''}
-                                        
-                                        <div class="news-metrics">
-                                            <div class="news-metric">
-                                                <span class="metric-label">Sentiment:</span>
-                                                <span class="metric-value ${sentimentClass}">${sentiment.toUpperCase()}</span>
-                                            </div>
-                                            
-                                            ${article.tradingImpact ? `
-                                            <div class="news-metric">
-                                                <span class="metric-label">Trading Impact:</span>
-                                                <span class="metric-value ${impactClass}">${article.tradingImpact}</span>
-                                            </div>
-                                            ` : ''}
-                                        </div>
+                                    <div class="metric">
+                                        <span class="metric-label">Sentiment</span>
+                                        <span class="metric-value ${sentimentClass}">${sentiment.toUpperCase()}</span>
                                     </div>
-                                    
-                                    ${article.url ? `<a href="${article.url}" target="_blank" class="news-link">Read Full Article</a>` : ''}
+                                    ${article.url ? `<a href="${article.url}" target="_blank" style="color: #ff6b35; text-decoration: none; font-size: 12px;">Read Full Article</a>` : ''}
                                 </div>
                             `;
                         });
@@ -1923,6 +1711,5 @@
             console.log('Dashboard initialized successfully');
         });
     </script>
-    <script src="tab-fix.js"></script>
 </body>
 </html>

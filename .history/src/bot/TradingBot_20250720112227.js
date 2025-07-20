@@ -180,16 +180,19 @@ class TradingBot {
                     newsImpact = cachedNews.data;
                     console.log('Using cached news impact data from', new Date(cachedNews.timestamp));
                 } else {
-                    // If no cache or expired, use synthetic news data
-                    console.warn('No valid news cache found, generating synthetic news data');
-                    newsImpact = this.generateSyntheticNewsData();
+                    // If no cache or expired, use a fallback empty object
+                    console.warn('No valid news cache found, using fallback empty data');
+                    newsImpact = {};
                     
-                    // Cache this synthetic data with a shorter expiry
-                    this.newsCache.set('watchlistNews', {
-                        data: newsImpact,
-                        timestamp: Date.now(),
-                        synthetic: true
-                    });
+                    // Create a minimal data structure for frequently traded stocks
+                    for (const symbol of this.watchlist.slice(0, 5)) {
+                        newsImpact[symbol] = {
+                            sentiment: 'neutral',
+                            score: 0,
+                            articles: 0,
+                            recentNews: []
+                        };
+                    }
                 }
             }
             
@@ -236,10 +239,8 @@ class TradingBot {
                         usingCachedData = true;
                         console.log(`Using cached price data for ${symbol}: ${priceData.length} bars`);
                     } else {
-                                // No valid cache, try synthetic data as last resort
-                        console.warn(`No valid data or cache for ${symbol}, generating synthetic data`);
-                        priceData = this.generateSyntheticPriceData(symbol);
-                        usingCachedData = true; // Mark as non-live data
+                        // No valid cache, propagate the error
+                        throw apiError;
                     }
                 }
                 
@@ -628,113 +629,6 @@ class TradingBot {
         }
         
         return trendingData;
-    }
-    
-    // Generate synthetic price data for a symbol as a last resort
-    generateSyntheticPriceData(symbol, days = 100) {
-        console.log(`Generating synthetic price data for ${symbol}`);
-        
-        // Get a base price that looks realistic for the symbol
-        let basePrice = 100;
-        
-        // Adjust base price based on the symbol to make it look more realistic
-        if (['AAPL', 'MSFT', 'GOOGL', 'AMZN'].includes(symbol)) {
-            basePrice = 150 + (Math.random() * 100);
-        } else if (['SPY', 'QQQ', 'DIA', 'IWM'].includes(symbol)) {
-            basePrice = 300 + (Math.random() * 150);
-        } else if (['TSLA', 'NVDA'].includes(symbol)) {
-            basePrice = 200 + (Math.random() * 150);
-        }
-        
-        const data = [];
-        let currentPrice = basePrice;
-        const today = new Date();
-        
-        for (let i = days; i > 0; i--) {
-            // Calculate date for this bar
-            const date = new Date(today);
-            date.setDate(date.getDate() - i);
-            
-            // Generate random price movement (more volatile for certain stocks)
-            let volatility = 0.01; // 1% daily movement on average
-            if (['TSLA', 'NVDA', 'AMZN'].includes(symbol)) {
-                volatility = 0.018; // 1.8% for volatile stocks
-            }
-            
-            const dailyChange = (Math.random() * 2 - 1) * volatility * currentPrice;
-            
-            // Calculate OHLC values
-            const close = currentPrice + dailyChange;
-            const open = currentPrice;
-            const high = Math.max(open, close) + (Math.random() * 0.02 * currentPrice);
-            const low = Math.min(open, close) - (Math.random() * 0.02 * currentPrice);
-            
-            // Generate volume (higher for more popular stocks)
-            const baseVolume = ['AAPL', 'MSFT', 'SPY', 'QQQ'].includes(symbol) 
-                ? 5000000 + (Math.random() * 3000000) 
-                : 1000000 + (Math.random() * 1000000);
-            
-            data.push({
-                t: date.toISOString(),
-                o: open.toFixed(2),
-                h: high.toFixed(2),
-                l: low.toFixed(2),
-                c: close.toFixed(2),
-                v: Math.round(baseVolume).toString()
-            });
-            
-            currentPrice = close;
-        }
-        
-        return data;
-    }
-    
-    // Generate synthetic news data as a last resort
-    generateSyntheticNewsData() {
-        const newsImpact = {};
-        const sentiments = ['positive', 'neutral', 'negative'];
-        const now = new Date();
-        
-        // Generate generic news for the top stocks
-        for (const symbol of this.watchlist.slice(0, 10)) {
-            // Randomly select a sentiment bias for this symbol
-            const sentimentIndex = Math.floor(Math.random() * 3);
-            const sentiment = sentiments[sentimentIndex];
-            const score = sentiment === 'positive' ? 0.3 + (Math.random() * 0.5) :
-                         sentiment === 'negative' ? -0.3 - (Math.random() * 0.5) :
-                         -0.2 + (Math.random() * 0.4);
-            
-            // Generate some synthetic news headlines
-            const recentNews = [
-                {
-                    headline: `${symbol} Announces Quarterly Results`,
-                    summary: `${symbol} reported its quarterly earnings, showing performance aligned with market expectations.`,
-                    published_at: new Date(now.getTime() - Math.random() * 48 * 60 * 60 * 1000).toISOString(),
-                    sentiment: sentiment,
-                    sentimentScore: score
-                }
-            ];
-            
-            // Add a second news item with 50% probability
-            if (Math.random() > 0.5) {
-                recentNews.push({
-                    headline: `Analyst Updates Outlook for ${symbol}`,
-                    summary: `Financial analysts have updated their projections for ${symbol} based on recent market developments.`,
-                    published_at: new Date(now.getTime() - Math.random() * 24 * 60 * 60 * 1000).toISOString(),
-                    sentiment: sentiment,
-                    sentimentScore: score * 0.8
-                });
-            }
-            
-            newsImpact[symbol] = {
-                sentiment: sentiment,
-                score: score,
-                articles: recentNews.length,
-                recentNews: recentNews
-            };
-        }
-        
-        return newsImpact;
     }
 }
 

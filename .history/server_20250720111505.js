@@ -187,65 +187,6 @@ function getSampleNewsData() {
     };
 }
 
-// Helper function to get sample stock news data with symbols
-function getSampleStockNewsData() {
-    const now = new Date();
-    return {
-        articles: [
-            {
-                title: 'AAPL Surges 3% on Strong iPhone Sales Reports',
-                summary: 'Apple (AAPL) shares climbed 3% today following reports that iPhone sales are exceeding analyst expectations in Asian markets, particularly in China.',
-                url: 'https://www.cnbc.com/markets/aapl',
-                published_at: new Date(now.setHours(now.getHours() - 1)).toISOString(),
-                sentiment: 'positive',
-                sentimentScore: 2.5,
-                detectedSymbols: ['AAPL'],
-                tradingImpact: 'Strong Bullish'
-            },
-            {
-                title: 'MSFT and GOOGL Lead Cloud Computing Growth',
-                summary: 'Microsoft (MSFT) and Alphabet (GOOGL) reported significant growth in their cloud divisions, with Azure and Google Cloud both exceeding quarterly revenue forecasts by over 15%.',
-                url: 'https://www.bloomberg.com/markets/tech',
-                published_at: new Date(now.setHours(now.getHours() - 3)).toISOString(),
-                sentiment: 'positive',
-                sentimentScore: 1.8,
-                detectedSymbols: ['MSFT', 'GOOGL'],
-                tradingImpact: 'Mildly Bullish'
-            },
-            {
-                title: 'TSLA Faces Production Challenges in New Factory',
-                summary: 'Tesla (TSLA) is experiencing production delays at its new European gigafactory, which could impact Q3 delivery targets. The company remains optimistic about meeting annual goals.',
-                url: 'https://www.reuters.com/markets/tsla',
-                published_at: new Date(now.setHours(now.getHours() - 5)).toISOString(),
-                sentiment: 'negative',
-                sentimentScore: -1.2,
-                detectedSymbols: ['TSLA'],
-                tradingImpact: 'Mildly Bearish'
-            },
-            {
-                title: 'JPM and BAC Prepare for Potential Fed Rate Cuts',
-                summary: 'Major banks including JPMorgan Chase (JPM) and Bank of America (BAC) are adjusting their strategies in anticipation of Fed rate cuts that could pressure net interest margins.',
-                url: 'https://www.ft.com/markets/banks',
-                published_at: new Date(now.setHours(now.getHours() - 7)).toISOString(),
-                sentiment: 'neutral',
-                sentimentScore: -0.2,
-                detectedSymbols: ['JPM', 'BAC'],
-                tradingImpact: 'Neutral'
-            },
-            {
-                title: 'AMZN Expands Healthcare Initiative with New Acquisition',
-                summary: 'Amazon (AMZN) announced the acquisition of a healthcare technology startup, expanding its footprint in the telehealth sector. The move is seen as part of a broader strategy to disrupt traditional healthcare delivery.',
-                url: 'https://www.techcrunch.com/amazon-health',
-                published_at: new Date(now.setHours(now.getHours() - 9)).toISOString(),
-                sentiment: 'positive',
-                sentimentScore: 1.5,
-                detectedSymbols: ['AMZN'],
-                tradingImpact: 'Mildly Bullish'
-            }
-        ]
-    };
-}
-
 // API Routes
 app.get('/api/account', async (req, res) => {
     try {

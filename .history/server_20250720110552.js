@@ -91,58 +91,6 @@ app.get('/api/news', async (req, res) => {
     }
 });
 
-// New endpoint for stock-specific news with symbol detection
-app.get('/api/stock-news', async (req, res) => {
-    try {
-        const limit = req.query.limit ? parseInt(req.query.limit) : 10;
-        
-        // First check if we have a watchlist from the trading bot
-        let articles = [];
-        
-        if (tradingBot.watchlist && tradingBot.watchlist.length > 0) {
-            // Get news for top watchlist symbols
-            const symbols = tradingBot.watchlist.slice(0, 5);
-            
-            // Get the news that's affecting the trading bot's decisions
-            for (const symbol of symbols) {
-                const stockNews = await newsService.getStockNews(symbol, 2);
-                articles = articles.concat(stockNews.map(article => ({...article, relatedSymbol: symbol})));
-            }
-        }
-        
-        // If we don't have enough articles from watchlist, get general market news
-        if (articles.length < limit) {
-            const generalNews = await newsService.getMarketNews(limit - articles.length);
-            articles = articles.concat(generalNews);
-        }
-        
-        // Apply stock symbol detection and sentiment analysis to all articles
-        const analyzedArticles = await newsService.analyzeNewsWithSymbols(articles);
-        
-        // For demonstration, ensure we have some symbols if none were detected
-        const processedArticles = analyzedArticles.map(article => {
-            // If no symbols were detected and we have a related symbol, use that
-            if (article.detectedSymbols.length === 0 && article.relatedSymbol) {
-                article.detectedSymbols = [article.relatedSymbol];
-            }
-            
-            // Ensure we have at least some impact score
-            if (!article.tradingImpact) {
-                article.tradingImpact = article.sentiment === 'positive' ? 'Mildly Bullish' : 
-                                      article.sentiment === 'negative' ? 'Mildly Bearish' : 'Neutral';
-            }
-            
-            return article;
-        });
-        
-        res.json({ articles: processedArticles.slice(0, limit) });
-    } catch (error) {
-        console.error('Error fetching stock news:', error);
-        // Return sample data with stock symbols
-        res.json(getSampleStockNewsData());
-    }
-});
-
 // Helper function to get sample news data
 function getSampleNewsData() {
     const now = new Date();
@@ -182,65 +130,6 @@ function getSampleNewsData() {
                 url: 'https://www.reuters.com/markets/us/',
                 published_at: new Date(now.setHours(now.getHours() - 6)).toISOString(),
                 sentiment: 'negative'
-            }
-        ]
-    };
-}
-
-// Helper function to get sample stock news data with symbols
-function getSampleStockNewsData() {
-    const now = new Date();
-    return {
-        articles: [
-            {
-                title: 'AAPL Surges 3% on Strong iPhone Sales Reports',
-                summary: 'Apple (AAPL) shares climbed 3% today following reports that iPhone sales are exceeding analyst expectations in Asian markets, particularly in China.',
-                url: 'https://www.cnbc.com/markets/aapl',
-                published_at: new Date(now.setHours(now.getHours() - 1)).toISOString(),
-                sentiment: 'positive',
-                sentimentScore: 2.5,
-                detectedSymbols: ['AAPL'],
-                tradingImpact: 'Strong Bullish'
-            },
-            {
-                title: 'MSFT and GOOGL Lead Cloud Computing Growth',
-                summary: 'Microsoft (MSFT) and Alphabet (GOOGL) reported significant growth in their cloud divisions, with Azure and Google Cloud both exceeding quarterly revenue forecasts by over 15%.',
-                url: 'https://www.bloomberg.com/markets/tech',
-                published_at: new Date(now.setHours(now.getHours() - 3)).toISOString(),
-                sentiment: 'positive',
-                sentimentScore: 1.8,
-                detectedSymbols: ['MSFT', 'GOOGL'],
-                tradingImpact: 'Mildly Bullish'
-            },
-            {
-                title: 'TSLA Faces Production Challenges in New Factory',
-                summary: 'Tesla (TSLA) is experiencing production delays at its new European gigafactory, which could impact Q3 delivery targets. The company remains optimistic about meeting annual goals.',
-                url: 'https://www.reuters.com/markets/tsla',
-                published_at: new Date(now.setHours(now.getHours() - 5)).toISOString(),
-                sentiment: 'negative',
-                sentimentScore: -1.2,
-                detectedSymbols: ['TSLA'],
-                tradingImpact: 'Mildly Bearish'
-            },
-            {
-                title: 'JPM and BAC Prepare for Potential Fed Rate Cuts',
-                summary: 'Major banks including JPMorgan Chase (JPM) and Bank of America (BAC) are adjusting their strategies in anticipation of Fed rate cuts that could pressure net interest margins.',
-                url: 'https://www.ft.com/markets/banks',
-                published_at: new Date(now.setHours(now.getHours() - 7)).toISOString(),
-                sentiment: 'neutral',
-                sentimentScore: -0.2,
-                detectedSymbols: ['JPM', 'BAC'],
-                tradingImpact: 'Neutral'
-            },
-            {
-                title: 'AMZN Expands Healthcare Initiative with New Acquisition',
-                summary: 'Amazon (AMZN) announced the acquisition of a healthcare technology startup, expanding its footprint in the telehealth sector. The move is seen as part of a broader strategy to disrupt traditional healthcare delivery.',
-                url: 'https://www.techcrunch.com/amazon-health',
-                published_at: new Date(now.setHours(now.getHours() - 9)).toISOString(),
-                sentiment: 'positive',
-                sentimentScore: 1.5,
-                detectedSymbols: ['AMZN'],
-                tradingImpact: 'Mildly Bullish'
             }
         ]
     };

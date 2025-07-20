@@ -57,12 +57,6 @@ class NewsService {
     }
 
     async analyzeNewsSentiment(articles) {
-        // Handle empty arrays or undefined inputs
-        if (!articles || !Array.isArray(articles) || articles.length === 0) {
-            console.warn('No articles to analyze, returning empty array');
-            return [];
-        }
-        
         // Simple sentiment analysis based on keywords
         const positiveKeywords = [
             'growth', 'profit', 'gain', 'rise', 'increase', 'success', 'positive',
@@ -125,11 +119,8 @@ class NewsService {
                 const stockNews = allNews[index];
                 const analyzedNews = this.analyzeNewsSentiment(stockNews);
                 
-                // Ensure analyzedNews is always an array
-                const newsArray = Array.isArray(analyzedNews) ? analyzedNews : [];
-                
-                const totalSentiment = newsArray.reduce((sum, article) => sum + (article.sentimentScore || 0), 0);
-                const avgSentiment = newsArray.length > 0 ? totalSentiment / newsArray.length : 0;
+                const totalSentiment = analyzedNews.reduce((sum, article) => sum + article.sentimentScore, 0);
+                const avgSentiment = analyzedNews.length > 0 ? totalSentiment / analyzedNews.length : 0;
                 
                 newsImpact[symbol] = {
                     sentiment: avgSentiment > 0 ? 'positive' : avgSentiment < 0 ? 'negative' : 'neutral',

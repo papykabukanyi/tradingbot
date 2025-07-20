@@ -180,16 +180,19 @@ class TradingBot {
                     newsImpact = cachedNews.data;
                     console.log('Using cached news impact data from', new Date(cachedNews.timestamp));
                 } else {
-                    // If no cache or expired, use synthetic news data
-                    console.warn('No valid news cache found, generating synthetic news data');
-                    newsImpact = this.generateSyntheticNewsData();
+                    // If no cache or expired, use a fallback empty object
+                    console.warn('No valid news cache found, using fallback empty data');
+                    newsImpact = {};
                     
-                    // Cache this synthetic data with a shorter expiry
-                    this.newsCache.set('watchlistNews', {
-                        data: newsImpact,
-                        timestamp: Date.now(),
-                        synthetic: true
-                    });
+                    // Create a minimal data structure for frequently traded stocks
+                    for (const symbol of this.watchlist.slice(0, 5)) {
+                        newsImpact[symbol] = {
+                            sentiment: 'neutral',
+                            score: 0,
+                            articles: 0,
+                            recentNews: []
+                        };
+                    }
                 }
             }
             
@@ -236,10 +239,8 @@ class TradingBot {
                         usingCachedData = true;
                         console.log(`Using cached price data for ${symbol}: ${priceData.length} bars`);
                     } else {
-                                // No valid cache, try synthetic data as last resort
-                        console.warn(`No valid data or cache for ${symbol}, generating synthetic data`);
-                        priceData = this.generateSyntheticPriceData(symbol);
-                        usingCachedData = true; // Mark as non-live data
+                        // No valid cache, propagate the error
+                        throw apiError;
                     }
                 }
                 

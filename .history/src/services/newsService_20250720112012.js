@@ -57,12 +57,6 @@ class NewsService {
     }
 
     async analyzeNewsSentiment(articles) {
-        // Handle empty arrays or undefined inputs
-        if (!articles || !Array.isArray(articles) || articles.length === 0) {
-            console.warn('No articles to analyze, returning empty array');
-            return [];
-        }
-        
         // Simple sentiment analysis based on keywords
         const positiveKeywords = [
             'growth', 'profit', 'gain', 'rise', 'increase', 'success', 'positive',
