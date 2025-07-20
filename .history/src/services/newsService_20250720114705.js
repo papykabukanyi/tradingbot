@@ -1,9 +1,8 @@
 const axios = require('axios');
-const { config } = require('../config');
 
 class NewsService {
     constructor() {
-        this.newsApiKey = config.news.apiKey;
+        this.newsApiKey = process.env.NEWS_API_KEY;
         this.alpacaNewsUrl = 'https://data.alpaca.markets/v1beta1/news';
         this.tradingBotWatchlist = null; // Will be set by the trading bot
     }
@@ -30,8 +29,8 @@ class NewsService {
             const response = await axios.get(this.alpacaNewsUrl, {
                 params,
                 headers: {
-                    'APCA-API-KEY-ID': config.alpaca.apiKey,
-                    'APCA-API-SECRET-KEY': config.alpaca.secretKey
+                    'APCA-API-KEY-ID': process.env.ALPACA_API_KEY,
+                    'APCA-API-SECRET-KEY': process.env.ALPACA_SECRET_KEY
                 }
             });
 

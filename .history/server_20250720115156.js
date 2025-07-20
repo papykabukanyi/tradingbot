@@ -1,8 +1,4 @@
-// Load environment variables from .env file i# Add news API endpoint - This exposes the same news data used by the trading bot
-app.get('/api/news', async (req, res) => {
-    try {
-        // Input validation
-        const limit = Math.min(req.query.limit ? parseInt(req.query.limit) : 10, 50); // Limit to max 50 itemsvelopment
+// Load environment variables from .env file in development
 if (process.env.NODE_ENV !== 'production') {
     require('dotenv').config();
 }
@@ -25,7 +21,7 @@ const newsService = require('./src/services/newsService');
 const emailService = require('./src/services/emailService');
 
 const app = express();
-const PORT = config.server.port;
+const PORT = process.env.PORT || 3000;
 
 // Middleware
 app.use(helmet({

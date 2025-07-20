@@ -21,12 +21,6 @@ class EmailService {
     }
 
     async sendEmergencyAlert(subject, message, error = null) {
-        // Skip if email is not configured
-        if (!this.transporter || !config.email.enabled) {
-            console.log(`Email notification skipped (not configured): ${subject}`);
-            return;
-        }
-        
         try {
             const emailContent = `
 🚨 TRADING BOT EMERGENCY ALERT 🚨
@@ -34,7 +28,7 @@ class EmailService {
 ${message}
 
 Time: ${new Date().toLocaleString()}
-Server: ${config.server.environment}
+Server: ${process.env.NODE_ENV || 'development'}
 
 ${error ? `Error Details: ${error.message}\nStack: ${error.stack}` : ''}
 
@@ -45,8 +39,8 @@ Alpaca Trading Bot Alert System
             `.trim();
 
             const mailOptions = {
-                from: config.email.from,
-                to: config.email.user, // Send to same email
+                from: process.env.EMAIL_FROM,
+                to: process.env.SMTP_USER, // Send to same email
                 subject: `🚨 URGENT: ${subject}`,
                 text: emailContent
             };

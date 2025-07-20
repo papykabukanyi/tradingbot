@@ -41,11 +41,6 @@ class TradingDashboard {
             button.addEventListener('click', (e) => {
                 const tabName = e.target.getAttribute('data-tab');
                 this.showTab(e, tabName);
-                
-                // Refresh watchlist data when switching to news or watchlist tabs
-                if (tabName === 'news' || tabName === 'watchlist') {
-                    this.fetchWatchlistData();
-                }
             });
         });
 
@@ -53,7 +48,6 @@ class TradingDashboard {
         document.addEventListener('click', (e) => {
             if (e.target.classList.contains('refresh-btn')) {
                 this.refreshAllData();
-                this.fetchWatchlistData(); // Also refresh watchlist data
             }
         });
     }

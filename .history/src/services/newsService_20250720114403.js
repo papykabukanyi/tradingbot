@@ -1,9 +1,8 @@
 const axios = require('axios');
-const { config } = require('../config');
 
 class NewsService {
     constructor() {
-        this.newsApiKey = config.news.apiKey;
+        this.newsApiKey = process.env.NEWS_API_KEY;
         this.alpacaNewsUrl = 'https://data.alpaca.markets/v1beta1/news';
         this.tradingBotWatchlist = null; // Will be set by the trading bot
     }
@@ -30,8 +29,8 @@ class NewsService {
             const response = await axios.get(this.alpacaNewsUrl, {
                 params,
                 headers: {
-                    'APCA-API-KEY-ID': config.alpaca.apiKey,
-                    'APCA-API-SECRET-KEY': config.alpaca.secretKey
+                    'APCA-API-KEY-ID': process.env.ALPACA_API_KEY,
+                    'APCA-API-SECRET-KEY': process.env.ALPACA_SECRET_KEY
                 }
             });
 
@@ -239,16 +238,7 @@ class NewsService {
         const matches = [...text.matchAll(symbolRegex)];
         
         matches.forEach(match => {
-            // Handle both regular symbol and $symbol format
-            const symbol = match[1] || match[2];
-            
-            if (!symbol) return;
-            
-            // Skip single letter symbols unless they're in common tickers
-            if (symbol.length === 1 && !commonTickers.has(symbol)) {
-                return;
-            }
-            
+            const symbol = match[1];
             // Add if it's a common ticker or longer than 1 letter and not in notStocks
             if (commonTickers.has(symbol) || (symbol.length > 1 && !notStocks.has(symbol))) {
                 detectedSymbols.add(symbol);

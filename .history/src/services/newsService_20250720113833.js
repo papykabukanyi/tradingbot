@@ -1,9 +1,8 @@
 const axios = require('axios');
-const { config } = require('../config');
 
 class NewsService {
     constructor() {
-        this.newsApiKey = config.news.apiKey;
+        this.newsApiKey = process.env.NEWS_API_KEY;
         this.alpacaNewsUrl = 'https://data.alpaca.markets/v1beta1/news';
         this.tradingBotWatchlist = null; // Will be set by the trading bot
     }
@@ -30,8 +29,8 @@ class NewsService {
             const response = await axios.get(this.alpacaNewsUrl, {
                 params,
                 headers: {
-                    'APCA-API-KEY-ID': config.alpaca.apiKey,
-                    'APCA-API-SECRET-KEY': config.alpaca.secretKey
+                    'APCA-API-KEY-ID': process.env.ALPACA_API_KEY,
+                    'APCA-API-SECRET-KEY': process.env.ALPACA_SECRET_KEY
                 }
             });
 
@@ -191,8 +190,7 @@ class NewsService {
     
     detectStockSymbols(text) {
         // Common stock symbols pattern - generally 1-5 uppercase letters
-        // Enhanced to better capture stock symbols with special formatting
-        const symbolRegex = /\b([A-Z]{1,5})\b|\$([A-Z]{1,5})\b/g;
+        const symbolRegex = /\b([A-Z]{1,5})\b/g;
         
         // Extended common stock market tickers from major exchanges (added more popular symbols)
         const commonTickers = new Set([
@@ -201,9 +199,7 @@ class NewsService {
             'V', 'MA', 'PG', 'JNJ', 'KO', 'PEP', 'MCD', 'NKE', 'SBUX', 'GS', 'MS',
             'SPY', 'QQQ', 'IWM', 'DIA', 'XLF', 'XLE', 'XLK', 'XLV', 'PYPL', 'BABA',
             'UBER', 'LYFT', 'PLTR', 'COIN', 'ZM', 'SHOP', 'SQ', 'ROKU', 'TTD', 'SNAP',
-            'TWTR', 'PINS', 'ETSY', 'DASH', 'ABNB', 'RBLX', 'GME', 'AMC', 'BB', 'NOK',
-            'NVAX', 'MRNA', 'PFE', 'JNJ', 'CVX', 'XOM', 'C', 'WFC', 'F', 'GM',
-            'T', 'VZ', 'HD', 'LOW', 'COST', 'TGT', 'WMT', 'EBAY', 'PYPL', 'ADBE'
+            'TWTR', 'PINS', 'ETSY', 'DASH', 'ABNB', 'RBLX', 'GME', 'AMC', 'BB', 'NOK'
         ]);
         
         // Words that might match pattern but aren't stocks (extended list)
@@ -212,9 +208,7 @@ class NewsService {
             'NYSE', 'AI', 'ML', 'AR', 'VR', 'IoT', 'SaaS', 'API', 'EPS', 'ETF',
             'ESG', 'USD', 'EUR', 'GBP', 'JPY', 'CAD', 'AUD', 'CHF', 'CPI', 'PPI',
             'PMI', 'FAQ', 'CES', 'CSS', 'HTML', 'JSON', 'REST', 'SQL', 'AWS', 'GCP',
-            'UK', 'EU', 'UN', 'WHO', 'IMF', 'ECB', 'WTO', 'CDC', 'FDA', 'EMA',
-            'CEO', 'CTO', 'CIO', 'CFO', 'COO', 'CPO', 'SVP', 'EVP', 'VP', 'CPA',
-            'MBA', 'PHD', 'BS', 'MS', 'MD', 'IT', 'HR', 'PR', 'IR', 'AM', 'PM'
+            'UK', 'EU', 'UN', 'WHO', 'IMF', 'ECB', 'WTO', 'CDC', 'FDA', 'EMA'
         ]);
         
         // First check the watchlist symbols explicitly - these have priority
@@ -239,16 +233,7 @@ class NewsService {
         const matches = [...text.matchAll(symbolRegex)];
         
         matches.forEach(match => {
-            // Handle both regular symbol and $symbol format
-            const symbol = match[1] || match[2];
-            
-            if (!symbol) return;
-            
-            // Skip single letter symbols unless they're in common tickers
-            if (symbol.length === 1 && !commonTickers.has(symbol)) {
-                return;
-            }
-            
+            const symbol = match[1];
             // Add if it's a common ticker or longer than 1 letter and not in notStocks
             if (commonTickers.has(symbol) || (symbol.length > 1 && !notStocks.has(symbol))) {
                 detectedSymbols.add(symbol);

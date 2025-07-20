@@ -25,32 +25,19 @@ npm install
    - Edit your `.env` file with your actual API keys
    - NEVER commit this file to version control!
 
-4. **Verify your configuration:**
-```
-npm run check-env
-```
-
-5. **Start the trading bot:**
-```
-npm start
-```
-
-6. **Access the dashboard:**
+3. **Test the bot:**
+   ```
+   node server.js
+   ```
+   
+4. **Access dashboard:**
    - Open: http://localhost:3000
-   - Use the interface to control the trading bot
+   - Use the start/stop buttons to control the bot
 
-## Security Best Practices
-
-- NEVER share your API keys or commit them to version control
-- Refer to `SECURITY.md` for complete security guidelines
-- Use paper trading mode for testing purposes
-
-## Railway Deployment
-
-For deploying to Railway:
-- See the `RAILWAY_SETUP.md` file for detailed instructions
-- Use Railway's environment variable system for all secrets
-- Never commit sensitive data to your repository
+## Demo Mode (No API Keys Required):
+If you want to test the interface without real data:
+```
+npm run demo
 ```
 
 ## Files Updated:

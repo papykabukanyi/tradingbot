@@ -430,7 +430,7 @@ class TradingBot {
             }
             
             // Find expiration date (8 months out)
-            const targetExpiration = moment().add(config.trading.optionExpiryMonths, 'months').format('YYYY-MM-DD');
+            const targetExpiration = moment().add(8, 'months').format('YYYY-MM-DD');
             const nearestExpiration = this.findNearestExpiration(optionChain, targetExpiration);
             
             // Find at-the-money options

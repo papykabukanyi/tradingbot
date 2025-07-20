@@ -12,27 +12,7 @@ class TradingDashboard {
         this.setupEventListeners();
         this.loadInitialData();
         this.startAutoUpdate();
-        this.fetchWatchlistData(); // Load watchlist symbols for news verification
         this.showTab(null, 'dashboard'); // Show dashboard by default
-    }
-    
-    // Fetch watchlist data for news verification
-    async fetchWatchlistData() {
-        try {
-            const response = await fetch('/api/watchlist');
-            const data = await response.json();
-            
-            if (Array.isArray(data)) {
-                this.watchlist = data.map(item => item.symbol);
-                // Also set global variable for use in news tab
-                window.tradingBotWatchlist = this.watchlist;
-                console.log(`Loaded ${this.watchlist.length} watchlist symbols for news verification`);
-            }
-        } catch (error) {
-            console.warn('Could not fetch watchlist data for news verification:', error);
-            this.watchlist = ['SPY', 'QQQ', 'AAPL', 'MSFT', 'AMZN', 'TSLA', 'NVDA']; // Fallback
-            window.tradingBotWatchlist = this.watchlist;
-        }
     }
 
     setupEventListeners() {
@@ -41,11 +21,6 @@ class TradingDashboard {
             button.addEventListener('click', (e) => {
                 const tabName = e.target.getAttribute('data-tab');
                 this.showTab(e, tabName);
-                
-                // Refresh watchlist data when switching to news or watchlist tabs
-                if (tabName === 'news' || tabName === 'watchlist') {
-                    this.fetchWatchlistData();
-                }
             });
         });
 
@@ -53,7 +28,6 @@ class TradingDashboard {
         document.addEventListener('click', (e) => {
             if (e.target.classList.contains('refresh-btn')) {
                 this.refreshAllData();
-                this.fetchWatchlistData(); // Also refresh watchlist data
             }
         });
     }

@@ -14,9 +14,9 @@ class TradingBot {
         this.watchlist = [];
         this.technicalAnalysis = new TechnicalAnalysis();
         this.positions = new Map();
-        this.maxPositionSize = config.trading.maxPositionSize;
-        this.riskPercentage = config.trading.riskPercentage;
-        this.minVolume = config.trading.minVolume;
+        this.maxPositionSize = parseFloat(process.env.MAX_POSITION_SIZE) || 1000;
+        this.riskPercentage = parseFloat(process.env.RISK_PERCENTAGE) || 0.02;
+        this.minVolume = parseFloat(process.env.MIN_VOLUME) || 10000;
         
         // Popular stocks for options trading with high volume and trending potential
         this.defaultWatchlist = [
@@ -430,7 +430,7 @@ class TradingBot {
             }
             
             // Find expiration date (8 months out)
-            const targetExpiration = moment().add(config.trading.optionExpiryMonths, 'months').format('YYYY-MM-DD');
+            const targetExpiration = moment().add(8, 'months').format('YYYY-MM-DD');
             const nearestExpiration = this.findNearestExpiration(optionChain, targetExpiration);
             
             // Find at-the-money options

@@ -30,8 +30,8 @@ class NewsService {
             const response = await axios.get(this.alpacaNewsUrl, {
                 params,
                 headers: {
-                    'APCA-API-KEY-ID': config.alpaca.apiKey,
-                    'APCA-API-SECRET-KEY': config.alpaca.secretKey
+                    'APCA-API-KEY-ID': process.env.ALPACA_API_KEY,
+                    'APCA-API-SECRET-KEY': process.env.ALPACA_SECRET_KEY
                 }
             });
 
