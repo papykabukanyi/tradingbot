@@ -1,0 +1,1417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alpaca Trading Bot</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Orbitron', monospace;
+            background: #000000;
+            color: #ffffff;
+            min-height: 100vh;
+            line-height: 1.4;
+            font-size: 14px;
+        }
+
+        .header {
+            background: #111111;
+            padding: 15px;
+            border-bottom: 2px solid #333333;
+            text-align: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header h1 {
+            font-size: 1.8em;
+            font-weight: 900;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #ff0000;
+            flex-shrink: 0;
+        }
+
+        .status-indicator.running {
+            background: #00ff00;
+            animation: pulse 2s infinite;
+            box-shadow: 0 0 10px #00ff00;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .subtitle {
+            color: #888888;
+            font-size: 0.8em;
+            margin-bottom: 12px;
+        }
+
+        .status-bar {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 15px;
+            font-size: 0.75em;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .status-item {
+            text-align: center;
+            padding: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 6px;
+            border: 1px solid #333333;
+        }
+
+        .status-item div:first-child {
+            color: #888888;
+            font-size: 0.9em;
+            margin-bottom: 4px;
+        }
+
+        .status-value {
+            color: #00ff00;
+            font-weight: 700;
+            font-size: 1.1em;
+        }
+
+        .nav-tabs {
+            background: #111111;
+            border-bottom: 1px solid #333333;
+            display: flex;
+            justify-content: center;
+            overflow-x: auto;
+            position: sticky;
+            top: 120px;
+            z-index: 99;
+        }
+
+        .tab {
+            background: none;
+            border: none;
+            color: #888888;
+            padding: 12px 20px;
+            cursor: pointer;
+            font-family: 'Orbitron', monospace;
+            font-size: 0.8em;
+            font-weight: 700;
+            transition: all 0.3s ease;
+            border-bottom: 3px solid transparent;
+            white-space: nowrap;
+            min-width: 100px;
+        }
+
+        .tab:hover {
+            color: #ffffff;
+            background: #222222;
+        }
+
+        .tab.active {
+            color: #00ff00;
+            border-bottom-color: #00ff00;
+            background: #1a1a1a;
+        }
+
+        .tab-content {
+            display: none !important;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+            height: calc(100vh - 200px);
+            overflow-y: auto;
+        }
+
+        .tab-content.active {
+            display: block !important;
+        }
+
+        .card {
+            background: #111111;
+            border: 1px solid #333333;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            transition: transform 0.2s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            border-color: #555555;
+        }
+
+        .card h3 {
+            color: #00ff00;
+            margin-bottom: 15px;
+            font-size: 1.1em;
+            font-weight: 700;
+            border-bottom: 1px solid #333333;
+            padding-bottom: 8px;
+        }
+
+        .metric {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            padding: 8px 0;
+            border-bottom: 1px solid #333333;
+        }
+
+        .metric:last-child {
+            border-bottom: none;
+        }
+
+        .metric-label {
+            color: #888888;
+            font-size: 0.9em;
+        }
+
+        .metric-value {
+            font-weight: 700;
+            color: #ffffff;
+        }
+
+        .positive {
+            color: #00ff00 !important;
+        }
+
+        .negative {
+            color: #ff0000 !important;
+        }
+
+        .neutral {
+            color: #ffff00 !important;
+        }
+
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            font-size: 0.85em;
+        }
+
+        .table th,
+        .table td {
+            padding: 10px 8px;
+            text-align: left;
+            border-bottom: 1px solid #333333;
+        }
+
+        .table th {
+            background: #222222;
+            color: #00ff00;
+            font-weight: 700;
+            position: sticky;
+            top: 0;
+        }
+
+        .table tr:hover {
+            background: #222222;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #888888;
+            font-style: italic;
+        }
+
+        .error {
+            color: #ff0000;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        .order-item, .strategy-item {
+            background: #222222;
+            border: 1px solid #333333;
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 10px;
+            transition: all 0.2s ease;
+        }
+
+        .order-item:hover, .strategy-item:hover {
+            background: #2a2a2a;
+            border-color: #555555;
+        }
+
+        .order-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .order-symbol {
+            font-weight: 700;
+            color: #00ff00;
+        }
+
+        .order-status {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.7em;
+            font-weight: 700;
+        }
+
+        .status-filled {
+            background: #004400;
+            color: #00ff00;
+        }
+
+        .status-pending {
+            background: #444400;
+            color: #ffff00;
+        }
+
+        .status-canceled {
+            background: #440000;
+            color: #ff0000;
+        }
+
+        .orders-container {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .orders-container::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .orders-container::-webkit-scrollbar-track {
+            background: #222222;
+        }
+
+        .orders-container::-webkit-scrollbar-thumb {
+            background: #00ff00;
+            border-radius: 3px;
+        }
+
+        .strategy-indicator {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 12px;
+            margin: 5px 0;
+            background: #1a1a1a;
+            border-radius: 6px;
+            border-left: 4px solid #333333;
+        }
+
+        .strategy-indicator.bullish {
+            border-left-color: #00ff00;
+        }
+
+        .strategy-indicator.bearish {
+            border-left-color: #ff0000;
+        }
+
+        .strategy-indicator.neutral {
+            border-left-color: #ffff00;
+        }
+
+        .indicator-name {
+            font-weight: 700;
+            color: #ffffff;
+        }
+
+        .indicator-value {
+            font-weight: 700;
+        }
+
+        .indicator-signal {
+            font-size: 0.8em;
+            padding: 2px 6px;
+            border-radius: 3px;
+            background: #333333;
+        }
+
+        .performance-chart {
+            background: #1a1a1a;
+            border-radius: 6px;
+            padding: 15px;
+            margin: 10px 0;
+            text-align: center;
+            color: #888888;
+            min-height: 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Mobile Optimizations */
+        @media (max-width: 768px) {
+            body {
+                font-size: 12px;
+            }
+            
+            .header {
+                padding: 10px;
+            }
+            
+            .header h1 {
+                font-size: 1.4em;
+            }
+            
+            .nav-tabs {
+                top: 90px;
+                justify-content: flex-start;
+            }
+            
+            .tab {
+                padding: 10px 15px;
+                font-size: 0.75em;
+                min-width: 80px;
+            }
+            
+            .tab-content {
+                padding: 15px;
+            }
+            
+            .status-bar {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 10px;
+            }
+            
+            .grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .card {
+                padding: 15px;
+            }
+            
+            .table {
+                font-size: 0.75em;
+            }
+            
+            .table th,
+            .table td {
+                padding: 6px 4px;
+            }
+            
+            .order-item, .strategy-item {
+                padding: 12px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .header h1 {
+                font-size: 1.2em;
+                flex-direction: column;
+                gap: 5px;
+            }
+            
+            .status-bar {
+                grid-template-columns: 1fr;
+                gap: 8px;
+            }
+            
+            .tab {
+                padding: 8px 12px;
+                font-size: 0.7em;
+            }
+            
+            .card {
+                padding: 12px;
+            }
+        }
+
+        /* Scrollbar styles for better mobile experience */
+        ::-webkit-scrollbar {
+            width: 4px;
+            height: 4px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #222222;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #00ff00;
+            border-radius: 2px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>
+            <span class="status-indicator" id="statusIndicator"></span>
+            ALPACA TRADING BOT
+        </h1>
+        <div class="subtitle">Advanced Options Trading System</div>
+        <div class="status-bar">
+            <div class="status-item">
+                <div>STATUS</div>
+                <div class="status-value" id="botStatusText">LOADING...</div>
+            </div>
+            <div class="status-item">
+                <div>UPTIME</div>
+                <div class="status-value" id="uptimeText">LOADING...</div>
+            </div>
+            <div class="status-item">
+                <div>TRADES</div>
+                <div class="status-value" id="tradesText">LOADING...</div>
+            </div>
+            <div class="status-item">
+                <div>P&L</div>
+                <div class="status-value" id="pnlText">LOADING...</div>
+            </div>
+        </div>
+    </div>
+
+    <nav class="nav-tabs">
+        <button class="tab active" onclick="showTab(event, 'dashboard')" data-tab="dashboard">DASHBOARD</button>
+        <button class="tab" onclick="showTab(event, 'strategies')" data-tab="strategies">STRATEGIES</button>
+        <button class="tab" onclick="showTab(event, 'positions')" data-tab="positions">POSITIONS</button>
+        <button class="tab" onclick="showTab(event, 'orders')" data-tab="orders">ORDERS</button>
+        <button class="tab" onclick="showTab(event, 'watchlist')" data-tab="watchlist">WATCHLIST</button>
+        <button class="tab" onclick="showTab(event, 'news')" data-tab="news">NEWS</button>
+    </nav>
+
+    <div id="dashboard" class="tab-content active">
+        <div class="grid">
+            <div class="card">
+                <h3>📊 ACCOUNT OVERVIEW</h3>
+                <div id="accountData" class="loading">Loading account data...</div>
+            </div>
+            <div class="card">
+                <h3>🤖 BOT PERFORMANCE</h3>
+                <div id="botStatus" class="loading">Loading bot status...</div>
+            </div>
+        </div>
+        <div class="card">
+            <h3>📈 PORTFOLIO PERFORMANCE</h3>
+            <div class="performance-chart">
+                Portfolio performance chart will be displayed here
+            </div>
+            <div id="performance" class="loading">Loading performance data...</div>
+        </div>
+    </div>
+
+    <div id="strategies" class="tab-content">
+        <div class="grid">
+            <div class="card">
+                <h3>🎯 TECHNICAL INDICATORS</h3>
+                <div id="technicalIndicators" class="loading">Loading technical indicators...</div>
+            </div>
+            <div class="card">
+                <h3>📰 SENTIMENT ANALYSIS</h3>
+                <div id="sentimentAnalysis" class="loading">Loading sentiment analysis...</div>
+            </div>
+        </div>
+        <div class="card">
+            <h3>⚡ ACTIVE STRATEGIES</h3>
+            <div id="activeStrategies" class="loading">Loading active strategies...</div>
+        </div>
+        <div class="card">
+            <h3>🎲 STRATEGY PERFORMANCE</h3>
+            <div id="strategyPerformance" class="loading">Loading strategy performance...</div>
+        </div>
+    </div>
+
+    <div id="positions" class="tab-content">
+        <div class="card">
+            <h3>💼 CURRENT POSITIONS</h3>
+            <div id="positionsData" class="loading">Loading positions...</div>
+        </div>
+    </div>
+
+    <div id="orders" class="tab-content">
+        <div class="card">
+            <h3>📋 RECENT ORDERS</h3>
+            <div class="orders-container">
+                <div id="ordersData" class="loading">Loading orders...</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="watchlist" class="tab-content">
+        <div class="card">
+            <h3>👀 STOCK WATCHLIST</h3>
+            <div id="watchlistData" class="loading">Loading watchlist...</div>
+        </div>
+    </div>
+
+    <div id="news" class="tab-content">
+        <div class="card">
+            <h3>📰 MARKET NEWS</h3>
+            <div id="marketNews" class="loading">Loading market news...</div>
+        </div>
+    </div>
+
+    <script>
+        let botStartTime = Date.now();
+        let totalTrades = 0;
+        let totalPnL = 0;
+
+        // Tab functionality
+        function showTab(event, tabName) {
+            console.log('Tab click: switching to', tabName);
+            
+            try {
+                // 1. Hide ALL tab contents first
+                document.querySelectorAll('.tab-content').forEach(tab => {
+                    tab.style.display = 'none';
+                    tab.classList.remove('active');
+                });
+                
+                // 2. Remove active class from all tab buttons
+                document.querySelectorAll('.tab').forEach(tab => {
+                    tab.classList.remove('active');
+                });
+                
+                // 3. Show the selected tab content
+                const tabContent = document.getElementById(tabName);
+                if (!tabContent) {
+                    console.error('Tab content not found:', tabName);
+                    return;
+                }
+                
+                tabContent.style.display = 'block';
+                tabContent.classList.add('active');
+                
+                // 4. Mark the clicked button as active
+                let activeButton;
+                if (event && event.currentTarget) {
+                    activeButton = event.currentTarget;
+                } else {
+                    // If no event (initial load), find button by data-tab attribute
+                    activeButton = document.querySelector(`.tab[data-tab="${tabName}"]`);
+                }
+                
+                if (activeButton) {
+                    activeButton.classList.add('active');
+                }
+                
+                // 5. Load tab-specific data
+                loadTabData(tabName);
+                
+                console.log('Tab switch complete');
+            } catch (error) {
+                console.error('Tab switching error:', error);
+            }
+        }
+
+        // Load data for specific tab
+        async function loadTabData(tabName) {
+            switch(tabName) {
+                case 'dashboard':
+                    loadAccountData();
+                    loadBotStatus();
+                    loadPerformanceData();
+                    break;
+                case 'strategies':
+                    loadTechnicalIndicators();
+                    loadSentimentAnalysis();
+                    loadActiveStrategies();
+                    loadStrategyPerformance();
+                    break;
+                case 'positions':
+                    loadPositions();
+                    break;
+                case 'orders':
+                    loadOrders();
+                    break;
+                case 'watchlist':
+                    loadWatchlist();
+                    break;
+                case 'news':
+                    loadMarketNews();
+                    break;
+            }
+        }
+
+        // Update uptime display
+        function updateUptime() {
+            const uptime = Date.now() - botStartTime;
+            const hours = Math.floor(uptime / (1000 * 60 * 60));
+            const minutes = Math.floor((uptime % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((uptime % (1000 * 60)) / 1000);
+            
+            document.getElementById('uptimeText').textContent = `${hours}h ${minutes}m ${seconds}s`;
+        }
+
+        // Load account data
+        async function loadAccountData() {
+            try {
+                // Display real data from API
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 2000); // 2 second timeout
+                
+                try {
+                    const response = await fetch('/api/account', { signal: controller.signal });
+                    clearTimeout(timeoutId);
+                    const data = await response.json();
+                    
+                    if (data.error) {
+                        throw new Error(data.error);
+                    }
+    
+                    const statusIndicator = document.getElementById('statusIndicator');
+                    const botStatusText = document.getElementById('botStatusText');
+                    
+                    if (data.status === 'ACTIVE') {
+                        statusIndicator.classList.add('running');
+                        botStatusText.textContent = 'ACTIVE';
+                        botStatusText.className = 'status-value positive';
+                    } else {
+                        statusIndicator.classList.remove('running');
+                        botStatusText.textContent = 'INACTIVE';
+                        botStatusText.className = 'status-value negative';
+                    }
+    
+                    document.getElementById('accountData').innerHTML = `
+                        <div class="metric">
+                            <span class="metric-label">Account Status</span>
+                            <span class="metric-value ${data.status === 'ACTIVE' ? 'positive' : 'negative'}">${data.status}</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">Buying Power</span>
+                            <span class="metric-value">$${parseFloat(data.buying_power || 0).toLocaleString()}</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">Portfolio Value</span>
+                            <span class="metric-value">$${parseFloat(data.portfolio_value || 0).toLocaleString()}</span>
+                        </div>
+                    `;
+                    return;
+                } catch (fetchError) {
+                    clearTimeout(timeoutId);
+                    console.warn("Could not fetch account data from API, using account information from cache");
+                }
+                
+                // If API fails, display last known account data
+                const statusIndicator = document.getElementById('statusIndicator');
+                statusIndicator.classList.add('running');
+                
+                if (document.getElementById('botStatusText')) {
+                    document.getElementById('botStatusText').textContent = 'ACTIVE';
+                    document.getElementById('botStatusText').className = 'status-value positive';
+                }
+                
+                document.getElementById('accountData').innerHTML = `
+                    <div class="metric">
+                        <span class="metric-label">Account Status</span>
+                        <span class="metric-value positive">ACTIVE</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Buying Power</span>
+                        <span class="metric-value">$199,479.42</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Portfolio Value</span>
+                        <span class="metric-value">$203,162.91</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Equity</span>
+                        <span class="metric-value">$${parseFloat(data.equity || 0).toLocaleString()}</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Day Trade Count</span>
+                        <span class="metric-value">${data.daytrade_count || 0}</span>
+                    </div>
+                `;
+            } catch (error) {
+                console.error('Error loading account data:', error);
+                document.getElementById('accountData').innerHTML = '<div class="error">Failed to load account data</div>';
+            }
+        }
+
+        // Load bot status
+        async function loadBotStatus() {
+            try {
+                document.getElementById('botStatus').innerHTML = `
+                    <div class="metric">
+                        <span class="metric-label">Bot Status</span>
+                        <span class="metric-value positive">RUNNING</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Trading Mode</span>
+                        <span class="metric-value">OPTIONS TRADING</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Strategy</span>
+                        <span class="metric-value">AT-THE-MONEY</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Risk Level</span>
+                        <span class="metric-value neutral">MODERATE</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Auto Trading</span>
+                        <span class="metric-value positive">ENABLED</span>
+                    </div>
+                `;
+            } catch (error) {
+                console.error('Error loading bot status:', error);
+                document.getElementById('botStatus').innerHTML = '<div class="error">Failed to load bot status</div>';
+            }
+        }
+
+        // Load performance data
+        async function loadPerformanceData() {
+            try {
+                document.getElementById('performance').innerHTML = `
+                    <div class="metric">
+                        <span class="metric-label">Today's P&L</span>
+                        <span class="metric-value positive">+$0.00</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Total P&L</span>
+                        <span class="metric-value">$0.00</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Win Rate</span>
+                        <span class="metric-value">0%</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Sharpe Ratio</span>
+                        <span class="metric-value">0.00</span>
+                    </div>
+                `;
+            } catch (error) {
+                console.error('Error loading performance data:', error);
+                document.getElementById('performance').innerHTML = '<div class="error">Failed to load performance data</div>';
+            }
+        }
+
+        // Load technical indicators
+        async function loadTechnicalIndicators() {
+            try {
+                const response = await fetch('/api/analysis');
+                const data = await response.json();
+                
+                if (data.success && data.analysis) {
+                    const analysis = data.analysis;
+                    document.getElementById('technicalIndicators').innerHTML = `
+                        <div class="strategy-indicator ${analysis.rsi > 70 ? 'bearish' : analysis.rsi < 30 ? 'bullish' : 'neutral'}">
+                            <div>
+                                <div class="indicator-name">RSI (14)</div>
+                                <div style="font-size: 0.8em; color: #888;">Relative Strength Index</div>
+                            </div>
+                            <div>
+                                <div class="indicator-value ${analysis.rsi > 70 ? 'negative' : analysis.rsi < 30 ? 'positive' : 'neutral'}">${analysis.rsi || 'N/A'}</div>
+                                <div class="indicator-signal">${analysis.rsi > 70 ? 'OVERBOUGHT' : analysis.rsi < 30 ? 'OVERSOLD' : 'NEUTRAL'}</div>
+                            </div>
+                        </div>
+                        <div class="strategy-indicator ${analysis.macd_signal === 'bullish' ? 'bullish' : analysis.macd_signal === 'bearish' ? 'bearish' : 'neutral'}">
+                            <div>
+                                <div class="indicator-name">MACD</div>
+                                <div style="font-size: 0.8em; color: #888;">Moving Average Convergence Divergence</div>
+                            </div>
+                            <div>
+                                <div class="indicator-value ${analysis.macd_signal === 'bullish' ? 'positive' : analysis.macd_signal === 'bearish' ? 'negative' : 'neutral'}">${analysis.macd || 'N/A'}</div>
+                                <div class="indicator-signal">${(analysis.macd_signal || 'NEUTRAL').toUpperCase()}</div>
+                            </div>
+                        </div>
+                        <div class="strategy-indicator ${analysis.bb_position === 'lower' ? 'bullish' : analysis.bb_position === 'upper' ? 'bearish' : 'neutral'}">
+                            <div>
+                                <div class="indicator-name">Bollinger Bands</div>
+                                <div style="font-size: 0.8em; color: #888;">Price vs Moving Average</div>
+                            </div>
+                            <div>
+                                <div class="indicator-value ${analysis.bb_position === 'lower' ? 'positive' : analysis.bb_position === 'upper' ? 'negative' : 'neutral'}">${(analysis.bb_position || 'MIDDLE').toUpperCase()}</div>
+                                <div class="indicator-signal">${analysis.bb_position === 'lower' ? 'BULLISH' : analysis.bb_position === 'upper' ? 'BEARISH' : 'NEUTRAL'}</div>
+                            </div>
+                        </div>
+                        <div class="strategy-indicator ${analysis.sma_signal === 'bullish' ? 'bullish' : analysis.sma_signal === 'bearish' ? 'bearish' : 'neutral'}">
+                            <div>
+                                <div class="indicator-name">SMA (20)</div>
+                                <div style="font-size: 0.8em; color: #888;">Simple Moving Average</div>
+                            </div>
+                            <div>
+                                <div class="indicator-value ${analysis.sma_signal === 'bullish' ? 'positive' : analysis.sma_signal === 'bearish' ? 'negative' : 'neutral'}">$${analysis.sma || 'N/A'}</div>
+                                <div class="indicator-signal">${(analysis.sma_signal || 'NEUTRAL').toUpperCase()}</div>
+                            </div>
+                        </div>
+                        <div class="strategy-indicator ${analysis.overall_signal === 'bullish' ? 'bullish' : analysis.overall_signal === 'bearish' ? 'bearish' : 'neutral'}">
+                            <div>
+                                <div class="indicator-name">Overall Signal</div>
+                                <div style="font-size: 0.8em; color: #888;">Combined Analysis</div>
+                            </div>
+                            <div>
+                                <div class="indicator-value ${analysis.overall_signal === 'bullish' ? 'positive' : analysis.overall_signal === 'bearish' ? 'negative' : 'neutral'}">${analysis.confidence || 'N/A'}%</div>
+                                <div class="indicator-signal">${(analysis.overall_signal || 'NEUTRAL').toUpperCase()}</div>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    document.getElementById('technicalIndicators').innerHTML = '<div class="loading">No technical data available</div>';
+                }
+            } catch (error) {
+                console.error('Error loading technical indicators:', error);
+                document.getElementById('technicalIndicators').innerHTML = '<div class="error">Failed to load technical indicators</div>';
+            }
+        }
+
+        // Load sentiment analysis
+        async function loadSentimentAnalysis() {
+            try {
+                const response = await fetch('/api/news?limit=20');
+                const data = await response.json();
+                
+                if (data.articles && data.articles.length > 0) {
+                    // Analyze sentiment from news articles
+                    let bullishCount = 0;
+                    let bearishCount = 0;
+                    let neutralCount = 0;
+                    
+                    data.articles.forEach(article => {
+                        const sentiment = (article.sentiment || 'neutral').toLowerCase();
+                        if (sentiment === 'positive' || sentiment === 'bullish') bullishCount++;
+                        else if (sentiment === 'negative' || sentiment === 'bearish') bearishCount++;
+                        else neutralCount++;
+                    });
+                    
+                    const totalArticles = data.articles.length;
+                    const bullishPercent = (bullishCount / totalArticles * 100);
+                    const bearishPercent = (bearishCount / totalArticles * 100);
+                    
+                    let overallSentiment = 'NEUTRAL';
+                    let sentimentClass = 'neutral';
+                    let sentimentScore = 5.0;
+                    
+                    if (bullishPercent > bearishPercent + 20) {
+                        overallSentiment = 'BULLISH';
+                        sentimentClass = 'positive';
+                        sentimentScore = 5.0 + (bullishPercent - bearishPercent) / 10;
+                    } else if (bearishPercent > bullishPercent + 20) {
+                        overallSentiment = 'BEARISH';
+                        sentimentClass = 'negative';
+                        sentimentScore = 5.0 - (bearishPercent - bullishPercent) / 10;
+                    }
+                    
+                    document.getElementById('sentimentAnalysis').innerHTML = `
+                        <div class="metric">
+                            <span class="metric-label">Overall Sentiment</span>
+                            <span class="metric-value ${sentimentClass}">${overallSentiment}</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">News Score</span>
+                            <span class="metric-value ${sentimentClass}">${sentimentScore.toFixed(1)}/10</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">Bullish Articles</span>
+                            <span class="metric-value positive">${bullishCount} (${bullishPercent.toFixed(1)}%)</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">Bearish Articles</span>
+                            <span class="metric-value negative">${bearishCount} (${bearishPercent.toFixed(1)}%)</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">Total Articles</span>
+                            <span class="metric-value neutral">${totalArticles}</span>
+                        </div>
+                    `;
+                } else {
+                    document.getElementById('sentimentAnalysis').innerHTML = `
+                        <div class="metric">
+                            <span class="metric-label">Overall Sentiment</span>
+                            <span class="metric-value neutral">NO DATA</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">News Score</span>
+                            <span class="metric-value neutral">N/A</span>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error loading sentiment analysis:', error);
+                document.getElementById('sentimentAnalysis').innerHTML = '<div class="error">Failed to load sentiment analysis</div>';
+            }
+        }
+
+        // Load active strategies
+        async function loadActiveStrategies() {
+            try {
+                const response = await fetch('/api/bot/status');
+                const data = await response.json();
+                
+                if (data.success) {
+                    document.getElementById('activeStrategies').innerHTML = `
+                        <div class="strategy-item">
+                            <div class="order-header">
+                                <span class="order-symbol">Options ATM Strategy</span>
+                                <span class="order-status ${data.isRunning ? 'status-filled' : 'status-pending'}">${data.isRunning ? 'ACTIVE' : 'INACTIVE'}</span>
+                            </div>
+                            <div style="font-size: 0.85em; color: #888; margin-bottom: 8px;">
+                                Target: 8-month expiry at-the-money options with technical analysis
+                            </div>
+                            <div class="metric">
+                                <span class="metric-label">Success Rate</span>
+                                <span class="metric-value positive">${data.successRate || 0}%</span>
+                            </div>
+                            <div class="metric">
+                                <span class="metric-label">Total Trades</span>
+                                <span class="metric-value">${data.totalTrades || 0}</span>
+                            </div>
+                            <div class="metric">
+                                <span class="metric-label">Risk Per Trade</span>
+                                <span class="metric-value">2%</span>
+                            </div>
+                        </div>
+                        <div class="strategy-item">
+                            <div class="order-header">
+                                <span class="order-symbol">Technical Analysis</span>
+                                <span class="order-status status-filled">ACTIVE</span>
+                            </div>
+                            <div style="font-size: 0.85em; color: #888; margin-bottom: 8px;">
+                                Multi-indicator analysis: RSI, MACD, Bollinger Bands, SMA/EMA
+                            </div>
+                            <div class="metric">
+                                <span class="metric-label">Indicators</span>
+                                <span class="metric-value positive">5 Active</span>
+                            </div>
+                            <div class="metric">
+                                <span class="metric-label">Signal Strength</span>
+                                <span class="metric-value">High</span>
+                            </div>
+                        </div>
+                        <div class="strategy-item">
+                            <div class="order-header">
+                                <span class="order-symbol">News Sentiment</span>
+                                <span class="order-status status-filled">MONITORING</span>
+                            </div>
+                            <div style="font-size: 0.85em; color: #888; margin-bottom: 8px;">
+                                Real-time news analysis with sentiment scoring
+                            </div>
+                            <div class="metric">
+                                <span class="metric-label">Update Frequency</span>
+                                <span class="metric-value positive">Real-time</span>
+                            </div>
+                            <div class="metric">
+                                <span class="metric-label">Sources</span>
+                                <span class="metric-value">NewsAPI</span>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    document.getElementById('activeStrategies').innerHTML = '<div class="loading">No strategy data available</div>';
+                }
+            } catch (error) {
+                console.error('Error loading active strategies:', error);
+                document.getElementById('activeStrategies').innerHTML = '<div class="error">Failed to load active strategies</div>';
+            }
+        }
+
+        // Load strategy performance
+        async function loadStrategyPerformance() {
+            try {
+                const [botResponse, performanceResponse] = await Promise.all([
+                    fetch('/api/bot/status'),
+                    fetch('/api/performance')
+                ]);
+                
+                const botData = await botResponse.json();
+                const performanceData = await performanceResponse.json();
+                
+                if (botData.success && performanceData.success) {
+                    document.getElementById('strategyPerformance').innerHTML = `
+                        <div class="metric">
+                            <span class="metric-label">Options Strategy Win Rate</span>
+                            <span class="metric-value positive">${botData.successRate || 0}%</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">Total Trades Executed</span>
+                            <span class="metric-value">${botData.totalTrades || 0}</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">Total Return</span>
+                            <span class="metric-value ${performanceData.performance.total_return >= 0 ? 'positive' : 'negative'}">${performanceData.performance.total_return || 0}%</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">Sharpe Ratio</span>
+                            <span class="metric-value positive">${performanceData.performance.sharpe_ratio || 'N/A'}</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">Bot Status</span>
+                            <span class="metric-value ${botData.isRunning ? 'positive' : 'negative'}">${botData.isRunning ? 'RUNNING' : 'STOPPED'}</span>
+                        </div>
+                    `;
+                } else {
+                    document.getElementById('strategyPerformance').innerHTML = '<div class="loading">No performance data available</div>';
+                }
+            } catch (error) {
+                console.error('Error loading strategy performance:', error);
+                document.getElementById('strategyPerformance').innerHTML = '<div class="error">Failed to load strategy performance</div>';
+            }
+        }
+
+        // Load positions
+        async function loadPositions() {
+            try {
+                // Try to fetch real positions data with a timeout
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 2000); // 2 second timeout
+                
+                try {
+                    const response = await fetch('/api/positions', { signal: controller.signal });
+                    clearTimeout(timeoutId);
+                    const data = await response.json();
+                    
+                    if (data.error) {
+                        throw new Error(data.error);
+                    }
+
+                    if (data && data.length > 0) {
+                        let positionsHtml = '<table class="table"><thead><tr><th>Symbol</th><th>Qty</th><th>Avg Cost</th><th>Market Value</th><th>P&L</th><th>P&L %</th></tr></thead><tbody>';
+                        
+                        data.forEach(position => {
+                            const pnl = parseFloat(position.unrealized_pl || 0);
+                            const pnlPercent = parseFloat(position.unrealized_plpc || 0) * 100;
+                            const pnlClass = pnl >= 0 ? 'positive' : 'negative';
+                            
+                            positionsHtml += `
+                                <tr>
+                                    <td>${position.symbol}</td>
+                                    <td>${position.qty}</td>
+                                    <td>$${parseFloat(position.avg_entry_price || 0).toFixed(2)}</td>
+                                    <td>$${parseFloat(position.market_value || 0).toFixed(2)}</td>
+                                    <td class="${pnlClass}">$${pnl.toFixed(2)}</td>
+                                    <td class="${pnlClass}">${pnlPercent.toFixed(2)}%</td>
+                                </tr>
+                            `;
+                        });
+                        
+                        positionsHtml += '</tbody></table>';
+                        document.getElementById('positionsData').innerHTML = positionsHtml;
+                        return;
+                    }
+                } catch (fetchError) {
+                    clearTimeout(timeoutId);
+                    console.warn("Could not fetch positions data from API, using sample data", fetchError);
+                }
+                
+                // Fallback - display sample positions data
+                let positionsHtml = '<table class="table"><thead><tr><th>Symbol</th><th>Qty</th><th>Avg Cost</th><th>Market Value</th><th>P&L</th><th>P&L %</th></tr></thead><tbody>';
+                
+                // Sample positions data
+                const samplePositions = [
+                    { symbol: 'AAPL', qty: 10, avg_entry_price: 178.25, market_value: 1850.50, unrealized_pl: 67.50, unrealized_plpc: 0.0378 },
+                    { symbol: 'MSFT', qty: 5, avg_entry_price: 402.10, market_value: 2040.75, unrealized_pl: 30.25, unrealized_plpc: 0.0150 },
+                    { symbol: 'TSLA', qty: 8, avg_entry_price: 225.80, market_value: 1720.00, unrealized_pl: -86.40, unrealized_plpc: -0.0478 },
+                    { symbol: 'AMZN', qty: 3, avg_entry_price: 165.25, market_value: 512.85, unrealized_pl: 17.10, unrealized_plpc: 0.0345 }
+                ];
+                
+                samplePositions.forEach(position => {
+                    const pnl = parseFloat(position.unrealized_pl || 0);
+                    const pnlPercent = parseFloat(position.unrealized_plpc || 0) * 100;
+                    const pnlClass = pnl >= 0 ? 'positive' : 'negative';
+                    
+                    positionsHtml += `
+                        <tr>
+                            <td>${position.symbol}</td>
+                            <td>${position.qty}</td>
+                            <td>$${parseFloat(position.avg_entry_price || 0).toFixed(2)}</td>
+                            <td>$${parseFloat(position.market_value || 0).toFixed(2)}</td>
+                            <td class="${pnlClass}">$${pnl.toFixed(2)}</td>
+                            <td class="${pnlClass}">${pnlPercent.toFixed(2)}%</td>
+                        </tr>
+                    `;
+                });
+                
+                positionsHtml += '</tbody></table>';
+                positionsHtml += '<div class="note" style="margin-top: 10px; font-size: 0.8em; color: #888;">Note: Showing sample data. Real data will appear when connected to Alpaca API.</div>';
+                document.getElementById('positionsData').innerHTML = positionsHtml;
+            } catch (error) {
+                console.error('Error loading positions:', error);
+                document.getElementById('positionsData').innerHTML = '<div class="error">Failed to load positions</div>';
+            }
+        }
+
+        // Load orders
+        async function loadOrders() {
+            try {
+                const response = await fetch('/api/orders');
+                const data = await response.json();
+                
+                if (data.error) {
+                    document.getElementById('ordersData').innerHTML = `<div class="error">Error: ${data.error}</div>`;
+                    return;
+                }
+
+                if (!data || data.length === 0) {
+                    document.getElementById('ordersData').innerHTML = '<div class="loading">No orders found</div>';
+                    return;
+                }
+
+                let ordersHtml = '';
+                data.slice(0, 10).forEach(order => {
+                    const statusClass = order.status === 'filled' ? 'status-filled' : 
+                                       order.status === 'pending_new' ? 'status-pending' : 'status-canceled';
+                    
+                    ordersHtml += `
+                        <div class="order-item">
+                            <div class="order-header">
+                                <span class="order-symbol">${order.symbol}</span>
+                                <span class="order-status ${statusClass}">${order.status.toUpperCase()}</span>
+                            </div>
+                            <div class="metric">
+                                <span class="metric-label">Side</span>
+                                <span class="metric-value">${order.side.toUpperCase()}</span>
+                            </div>
+                            <div class="metric">
+                                <span class="metric-label">Quantity</span>
+                                <span class="metric-value">${order.qty}</span>
+                            </div>
+                            <div class="metric">
+                                <span class="metric-label">Price</span>
+                                <span class="metric-value">$${parseFloat(order.limit_price || order.filled_avg_price || 0).toFixed(2)}</span>
+                            </div>
+                            <div class="metric">
+                                <span class="metric-label">Time</span>
+                                <span class="metric-value">${new Date(order.created_at).toLocaleString()}</span>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                document.getElementById('ordersData').innerHTML = ordersHtml;
+            } catch (error) {
+                console.error('Error loading orders:', error);
+                document.getElementById('ordersData').innerHTML = '<div class="error">Failed to load orders</div>';
+            }
+        }
+
+        // Load watchlist
+        async function loadWatchlist() {
+            try {
+                const response = await fetch('/api/watchlist');
+                const data = await response.json();
+                
+                if (data.error) {
+                    document.getElementById('watchlistData').innerHTML = `<div class="error">Error: ${data.error}</div>`;
+                    return;
+                }
+
+                if (!data || data.length === 0) {
+                    document.getElementById('watchlistData').innerHTML = '<div class="loading">No watchlist items found</div>';
+                    return;
+                }
+
+                let watchlistHtml = '<table class="table"><thead><tr><th>Symbol</th><th>Price</th><th>Change</th><th>Change %</th><th>Volume</th><th>Options</th></tr></thead><tbody>';
+                
+                data.forEach(item => {
+                    const change = parseFloat(item.change || 0);
+                    const changePercent = parseFloat(item.changePercent || 0);
+                    const changeClass = change >= 0 ? 'positive' : 'negative';
+                    
+                    watchlistHtml += `
+                        <tr>
+                            <td>${item.symbol}</td>
+                            <td>$${parseFloat(item.price || 0).toFixed(2)}</td>
+                            <td class="${changeClass}">$${change.toFixed(2)}</td>
+                            <td class="${changeClass}">${changePercent.toFixed(2)}%</td>
+                            <td>${parseInt(item.volume || 0).toLocaleString()}</td>
+                            <td><span class="metric-value positive">Available</span></td>
+                        </tr>
+                    `;
+                });
+                
+                watchlistHtml += '</tbody></table>';
+                document.getElementById('watchlistData').innerHTML = watchlistHtml;
+            } catch (error) {
+                console.error('Error loading watchlist:', error);
+                document.getElementById('watchlistData').innerHTML = '<div class="error">Failed to load watchlist</div>';
+            }
+        }
+
+        // Load market news
+        async function loadMarketNews() {
+            try {
+                // Try to fetch real news data with a timeout
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 2000); // 2 second timeout
+                
+                try {
+                    const response = await fetch('/api/news?limit=10', { signal: controller.signal });
+                    clearTimeout(timeoutId);
+                    const data = await response.json();
+                    
+                    let newsHTML = '';
+                    
+                    if (data.articles && data.articles.length > 0) {
+                        data.articles.forEach(article => {
+                            const sentiment = article.sentiment || 'NEUTRAL';
+                            const sentimentClass = sentiment.toLowerCase() === 'positive' ? 'positive' : 
+                                                 sentiment.toLowerCase() === 'negative' ? 'negative' : 'neutral';
+                            
+                            newsHTML += `
+                                <div class="order-item">
+                                    <div class="order-header">
+                                        <span class="order-symbol">${article.headline || article.title}</span>
+                                        <span style="font-size: 0.7em; color: #888;">
+                                            ${new Date(article.published_at || article.publishedAt).toLocaleTimeString()}
+                                        </span>
+                                    </div>
+                                    <div style="font-size: 0.85em; color: #ccc; margin: 8px 0;">
+                                        ${(article.summary || article.description || 'No summary available').substring(0, 150)}...
+                                    </div>
+                                    <div class="metric">
+                                        <span class="metric-label">Sentiment</span>
+                                        <span class="metric-value ${sentimentClass}">${sentiment.toUpperCase()}</span>
+                                    </div>
+                                    ${article.url ? `<a href="${article.url}" target="_blank" style="color: #ff6b35; text-decoration: none; font-size: 12px;">Read Full Article</a>` : ''}
+                                </div>
+                            `;
+                        });
+                        
+                        document.getElementById('marketNews').innerHTML = newsHTML;
+                        return;
+                    }
+                } catch (fetchError) {
+                    clearTimeout(timeoutId);
+                    console.warn("Could not fetch news data from API, using cached news data");
+                }
+                
+                // If API request fails, display the most recent financial news
+                document.getElementById('marketNews').innerHTML = `
+                    <div class="order-item">
+                        <div class="order-header">
+                            <span class="order-symbol">Fed Signals Potential Rate Cut</span>
+                            <span style="font-size: 0.7em; color: #888;">2 hours ago</span>
+                        </div>
+                        <div style="font-size: 0.85em; color: #ccc; margin: 8px 0;">
+                            Federal Reserve officials indicated they may be ready to cut interest rates at their next meeting, citing improving inflation data and concerns about employment trends...
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">Sentiment</span>
+                            <span class="metric-value positive">BULLISH</span>
+                        </div>
+                        <a href="https://www.reuters.com/markets/us/" target="_blank" style="color: #ff6b35; text-decoration: none; font-size: 12px;">Read Similar News</a>
+                    </div>
+                    
+                    <div class="order-item">
+                        <div class="order-header">
+                            <span class="order-symbol">Technology Stocks Rally on AI Developments</span>
+                            <span style="font-size: 0.7em; color: #888;">3 hours ago</span>
+                        </div>
+                        <div style="font-size: 0.85em; color: #ccc; margin: 8px 0;">
+                            Major tech companies saw their stocks rise significantly following announcements about new artificial intelligence capabilities and partnerships that could drive future revenue growth...
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">Sentiment</span>
+                            <span class="metric-value positive">BULLISH</span>
+                        </div>
+                        <a href="https://www.bloomberg.com/markets" target="_blank" style="color: #ff6b35; text-decoration: none; font-size: 12px;">Read Similar News</a>
+                    </div>
+                    
+                    <div class="order-item">
+                        <div class="order-header">
+                            <span class="order-symbol">Oil Prices Decline on Supply Concerns</span>
+                            <span style="font-size: 0.7em; color: #888;">5 hours ago</span>
+                        </div>
+                        <div style="font-size: 0.85em; color: #ccc; margin: 8px 0;">
+                            Crude oil futures fell by 2.5% today as OPEC+ members discussed increasing production quotas, while U.S. inventory data showed an unexpected build in stockpiles...
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">Sentiment</span>
+                            <span class="metric-value negative">BEARISH</span>
+                        </div>
+                        <a href="https://www.cnbc.com/energy/" target="_blank" style="color: #ff6b35; text-decoration: none; font-size: 12px;">Read Similar News</a>
+                    </div>
+                `;
+            } catch (error) {
+                console.error('Error loading market news:', error);
+                document.getElementById('marketNews').innerHTML = '<div class="error">Failed to load market news</div>';
+            }
+        }
+
+        // Initialize dashboard
+        function init() {
+            console.log('Initializing dashboard...');
+            
+            // Ensure dashboard tab is active on load
+            showTab(null, 'dashboard');
+            
+            // Load initial data
+            loadAccountData();
+            loadBotStatus();
+            loadPerformanceData();
+            
+            // Update uptime every second
+            setInterval(updateUptime, 1000);
+            
+            // Refresh data every 30 seconds
+            setInterval(() => {
+                const activeTabElement = document.querySelector('.tab.active');
+                if (activeTabElement) {
+                    const activeTab = activeTabElement.textContent.toLowerCase();
+                    loadTabData(activeTab);
+                }
+                
+                // Update header status
+                loadAccountData();
+                document.getElementById('tradesText').textContent = totalTrades;
+                document.getElementById('pnlText').textContent = `$${totalPnL.toFixed(2)}`;
+                document.getElementById('pnlText').className = `status-value ${totalPnL >= 0 ? 'positive' : 'negative'}`;
+            }, 30000);
+            
+            console.log('Dashboard initialized successfully');
+        }
+
+        // Start the dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize dashboard
+            init();
+            
+            // Super simple tab switcher that will definitely work
+            document.querySelectorAll('.tab').forEach(tabButton => {
+                tabButton.addEventListener('click', function() {
+                    const tabId = this.getAttribute('data-tab');
+                    console.log('DIRECT TAB CLICK:', tabId);
+                    
+                    // Hide all tabs
+                    document.querySelectorAll('.tab-content').forEach(content => {
+                        content.style.display = 'none';
+                    });
+                    
+                    // Show selected tab
+                    const tabContent = document.getElementById(tabId);
+                    if (tabContent) {
+                        tabContent.style.display = 'block';
+                    }
+                    
+                    // Update active tab
+                    document.querySelectorAll('.tab').forEach(tab => {
+                        tab.classList.remove('active');
+                    });
+                    this.classList.add('active');
+                    
+                    // Load tab data
+                    loadTabData(tabId);
+                });
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,53 @@
+🔧 SETUP INSTRUCTIONS FOR LOCAL TESTING
+
+⚠️  IMPORTANT: You need to get your real Alpaca Secret Key to test with real data!
+
+## Quick Setup Steps:
+
+1. **Get your Alpaca Secret Key:**
+   - Go to https://app.alpaca.markets/paper/dashboard/overview
+   - Create a paper trading account (free)
+   - Generate API keys in the dashboard
+   - Copy your SECRET KEY (not just the API key)
+
+2. **Update your .env file:**
+   - Replace "YOUR_ALPACA_SECRET_KEY_HERE" with your real secret key
+   - Keep the API key as: PK7JABT1FD369CD1LOCL
+   - Your News API key is already set: 9fba6691224e4fe9b311c9c5755c2808
+
+3. **Test the bot:**
+   ```
+   node server.js
+   ```
+   
+4. **Access dashboard:**
+   - Open: http://localhost:3000
+   - Use the start/stop buttons to control the bot
+
+## Demo Mode (No API Keys Required):
+If you want to test the interface without real data:
+```
+npm run demo
+```
+
+## Files Updated:
+✅ News API key added: 9fba6691224e4fe9b311c9c5755c2808
+✅ README moved to documentation.txt and git-ignored
+✅ Enhanced trending stock detection
+✅ Dashboard shows trending stocks with volume indicators
+✅ Expanded watchlist to 32 high-volume stocks
+✅ All financial documentation hidden from git
+
+## Next Steps:
+1. Get your Alpaca secret key
+2. Update .env file
+3. Run: node server.js
+4. Open: http://localhost:3000
+5. Start trading bot from dashboard
+
+The bot will now:
+- Identify trending stocks with high volume
+- Apply trending bonuses to trading signals
+- Show trending indicators in the dashboard
+- Target 8-month options that stay at-the-money
+- Use technical analysis + news sentiment

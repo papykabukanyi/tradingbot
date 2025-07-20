@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alpaca Trading Bot Dashboard</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <h1>🤖 ALPACA TRADING BOT</h1>
+        <div class="subtitle">Advanced Options Trading with Technical Analysis</div>
+    </header>
+
+    <!-- Navigation Tabs -->
+    <nav class="nav-tabs">
+        <button class="tab-button active" data-tab="dashboard">Dashboard</button>
+        <button class="tab-button" data-tab="news">Market News</button>
+        <button class="tab-button" data-tab="analysis">Analysis</button>
+        <button class="tab-button" data-tab="trades">Trades</button>
+        <button class="tab-button" data-tab="settings">Settings</button>
+    </nav>
+
+    <!-- Dashboard Tab -->
+    <div id="dashboard" class="tab-content active">
+        <div class="dashboard-grid">
+            <!-- Account Information -->
+            <div class="card">
+                <h3>💰 Account Information</h3>
+                <div class="metric">
+                    <span class="metric-label">Buying Power</span>
+                    <span class="metric-value" id="buyingPower">Loading...</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Portfolio Value</span>
+                    <span class="metric-value" id="portfolioValue">Loading...</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Equity</span>
+                    <span class="metric-value" id="equity">Loading...</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Cash</span>
+                    <span class="metric-value" id="cash">Loading...</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Day P&L</span>
+                    <span class="metric-value" id="dayPL">Loading...</span>
+                </div>
+            </div>
+
+            <!-- Bot Status -->
+            <div class="card">
+                <h3>🤖 Bot Status</h3>
+                <div class="metric">
+                    <span class="metric-label">Status</span>
+                    <span class="status" id="botStatus">Loading...</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Uptime</span>
+                    <span class="metric-value" id="botUptime">Loading...</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Total Trades</span>
+                    <span class="metric-value" id="totalTrades">Loading...</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Success Rate</span>
+                    <span class="metric-value" id="successRate">Loading...</span>
+                </div>
+                <div style="margin-top: 15px;">
+                    <button class="btn" onclick="dashboard.startBot()">Start Bot</button>
+                    <button class="btn btn-danger" onclick="dashboard.stopBot()">Stop Bot</button>
+                </div>
+            </div>
+
+            <!-- Performance Metrics -->
+            <div class="card">
+                <h3>📈 Performance</h3>
+                <div class="metric">
+                    <span class="metric-label">Total Return</span>
+                    <span class="metric-value" id="totalReturn">Loading...</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Weekly Return</span>
+                    <span class="metric-value" id="weeklyReturn">Loading...</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Monthly Return</span>
+                    <span class="metric-value" id="monthlyReturn">Loading...</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Sharpe Ratio</span>
+                    <span class="metric-value" id="sharpeRatio">Loading...</span>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="card">
+                <h3>⚡ Quick Actions</h3>
+                <div style="display: flex; flex-direction: column; gap: 10px;">
+                    <button class="btn refresh-btn">Refresh Data</button>
+                    <button class="btn btn-secondary" onclick="dashboard.showTab(null, 'analysis')">View Analysis</button>
+                    <button class="btn btn-secondary" onclick="dashboard.showTab(null, 'trades')">View Trades</button>
+                    <button class="btn btn-secondary" onclick="dashboard.showTab(null, 'settings')">Bot Settings</button>
+                </div>
+                <div style="margin-top: 15px; text-align: center; color: #888; font-size: 12px;">
+                    Last Updated: <span id="lastUpdate">Never</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Market News Tab -->
+    <div id="news" class="tab-content">
+        <div class="card">
+            <h3>📰 Latest Market News</h3>
+            <div id="newsList">
+                <div class="loading">Loading market news...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Analysis Tab -->
+    <div id="analysis" class="tab-content">
+        <div class="dashboard-grid">
+            <div class="card">
+                <h3>📊 Market Analysis</h3>
+                <div class="metric">
+                    <span class="metric-label">Market Trend</span>
+                    <span class="metric-value" id="marketTrend">Loading...</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Volatility</span>
+                    <span class="metric-value" id="volatility">Loading...</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">RSI</span>
+                    <span class="metric-value" id="rsi">Loading...</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">MACD</span>
+                    <span class="metric-value" id="macd">Loading...</span>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>🎯 Trading Signals</h3>
+                <div id="tradingSignals">
+                    <div class="loading">Analyzing market conditions...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Trades Tab -->
+    <div id="trades" class="tab-content">
+        <div class="dashboard-grid">
+            <div class="card">
+                <h3>📋 Recent Trades</h3>
+                <div id="recentTrades">
+                    <div class="loading">Loading recent trades...</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>💼 Current Positions</h3>
+                <div id="currentPositions">
+                    <div class="loading">Loading current positions...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Tab -->
+    <div id="settings" class="tab-content">
+        <div class="card">
+            <h3>⚙️ Bot Settings</h3>
+            <form id="settingsForm">
+                <div class="form-group">
+                    <label for="riskPercentage">Risk Per Trade (%)</label>
+                    <input type="number" id="riskPercentage" min="0.1" max="10" step="0.1" value="2">
+                </div>
+                
+                <div class="form-group">
+                    <label for="maxPositions">Maximum Positions</label>
+                    <input type="number" id="maxPositions" min="1" max="20" value="5">
+                </div>
+                
+                <div class="form-group">
+                    <label for="stopLoss">Stop Loss (%)</label>
+                    <input type="number" id="stopLoss" min="1" max="50" step="0.1" value="10">
+                </div>
+                
+                <div class="form-group">
+                    <label for="takeProfit">Take Profit (%)</label>
+                    <input type="number" id="takeProfit" min="1" max="100" step="0.1" value="20">
+                </div>
+                
+                <div style="margin-top: 20px;">
+                    <button type="button" class="btn" onclick="dashboard.saveBotSettings()">Save Settings</button>
+                    <button type="button" class="btn btn-secondary" onclick="dashboard.loadBotSettings()">Reset</button>
+                </div>
+            </form>
+        </div>
+
+        <div class="card">
+            <h3>📈 Trading Strategy</h3>
+            <div style="color: #ccc; line-height: 1.6;">
+                <p><strong>Options Strategy:</strong> At-the-money (ATM) options with 8-month expiration</p>
+                <p><strong>Technical Indicators:</strong> RSI, MACD, Bollinger Bands, SMA/EMA</p>
+                <p><strong>Risk Management:</strong> Maximum 2% risk per trade</p>
+                <p><strong>News Integration:</strong> Real-time sentiment analysis</p>
+                <p><strong>Market Hours:</strong> Active during regular trading hours</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script src="script.js"></script>
+</body>
+</html>
