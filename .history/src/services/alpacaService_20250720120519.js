@@ -92,21 +92,6 @@ class AlpacaService {
         }
     }
 
-    async getPosition(symbol) {
-        try {
-            const position = await this.alpaca.getPosition(symbol);
-            return position;
-        } catch (error) {
-            // If the error is 404, it means the position doesn't exist
-            if (error.statusCode === 404) {
-                console.log(`No position found for ${symbol}`);
-                return null;
-            }
-            console.error(`Error getting position for ${symbol}:`, error);
-            throw error;
-        }
-    }
-    
     async placeOrder(orderData) {
         try {
             return await this.alpaca.createOrder(orderData);

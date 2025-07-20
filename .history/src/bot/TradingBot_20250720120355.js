@@ -163,9 +163,6 @@ class TradingBot {
         try {
             console.log('Executing trading strategy...');
             
-            // First, check if any existing trades should be closed at profit target
-            await this.monitorActiveTrades();
-            
             // Analyze all watchlist stocks
             const analyses = await this.analyzeWatchlist();
             
@@ -563,82 +560,6 @@ class TradingBot {
         }
         
         return nearest;
-    }
-    
-    async monitorActiveTrades() {
-        if (this.activeTrades.size === 0) {
-            return; // No active trades to monitor
-        }
-        
-        console.log(`Monitoring ${this.activeTrades.size} active trades for profit targets...`);
-        
-        for (const [orderId, trade] of this.activeTrades.entries()) {
-            try {
-                // Skip trades that aren't active yet
-                if (trade.status !== 'active') continue;
-                
-                // Get the current position details
-                const position = await alpacaService.getPosition(trade.optionSymbol);
-                
-                // If no position, it might have been closed already
-                if (!position) {
-                    console.log(`No position found for ${trade.optionSymbol}, removing from active trades`);
-                    this.activeTrades.delete(orderId);
-                    continue;
-                }
-                
-                // Calculate current value
-                const currentPrice = parseFloat(position.current_price || position.last_price || 0);
-                const currentValue = currentPrice * trade.contracts * 100;
-                const percentGain = (currentValue - trade.totalCost) / trade.totalCost;
-                
-                console.log(`${trade.symbol} ${trade.optionType} - Current P/L: ${(percentGain * 100).toFixed(2)}% ($${(currentValue - trade.totalCost).toFixed(2)})`);
-                
-                // Check if profit target has been reached
-                if (currentValue >= trade.profitTarget) {
-                    console.log(`PROFIT TARGET REACHED for ${trade.symbol} ${trade.optionType}: +${(percentGain * 100).toFixed(2)}%`);
-                    
-                    // Close the position
-                    const closeResult = await alpacaService.placeOptionOrder(
-                        trade.optionSymbol,
-                        trade.contracts,
-                        'sell' // We're selling to close
-                    );
-                    
-                    console.log(`Closed position for ${trade.symbol} at profit target: ${closeResult.id}`);
-                    
-                    // Update trade status
-                    trade.status = 'closed';
-                    trade.exitDate = new Date();
-                    trade.exitPrice = currentPrice;
-                    trade.profit = currentValue - trade.totalCost;
-                    trade.profitPercent = percentGain;
-                    
-                    // Send notification email
-                    await emailService.sendTradingAlert(
-                        `PROFIT TARGET HIT: ${trade.symbol} ${trade.optionType.toUpperCase()}`,
-                        `A profit target has been reached and the position has been automatically closed.`,
-                        {
-                            symbol: trade.symbol,
-                            optionType: trade.optionType,
-                            strikePrice: trade.strikePrice,
-                            expiration: trade.expiration,
-                            contracts: trade.contracts,
-                            entryPrice: trade.entryPrice,
-                            exitPrice: currentPrice,
-                            profitAmount: currentValue - trade.totalCost,
-                            profitPercent: percentGain * 100,
-                            holdingPeriod: moment.duration(moment().diff(moment(trade.entryDate))).humanize()
-                        }
-                    );
-                    
-                    // Remove from active trades
-                    this.activeTrades.delete(orderId);
-                }
-            } catch (error) {
-                console.error(`Error monitoring trade ${trade.optionSymbol}:`, error);
-            }
-        }
     }
 
     async getWatchlist() {

@@ -22,26 +22,7 @@ validateConfig();
 const TradingBot = require('./src/bot/TradingBot');
 const alpacaService = require('./src/services/alpacaService');
 const newsService = require('./src/services/newsService');
-const emai# Start the server
-app.listen(PORT, () => {
-    console.log(`Trading bot server running on port ${PORT}`);
-    console.log(`Environment: ${config.server.environment}`);
-    console.log(`Dashboard: http://localhost:${PORT}`);
-    
-    // Auto-start the trading bot in production
-    if (config.server.isProduction) {
-        tradingBot.initialize().then(() => {
-            tradingBot.start();
-            console.log('🤖 Trading bot auto-started successfully');
-            emailService.sendTradingAlert(
-                'Trading Bot Started',
-                'The trading bot has been automatically started on Railway deployment.'
-            );
-        }).catch(err => {
-            console.error('Failed to auto-start trading bot:', err);
-        });
-    }
-});ce = require('./src/services/emailService');
+const emailService = require('./src/services/emailService');
 
 const app = express();
 const PORT = config.server.port;
