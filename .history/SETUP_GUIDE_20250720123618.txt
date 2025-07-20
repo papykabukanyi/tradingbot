@@ -1,0 +1,41 @@
+ENVIRONMENT SETUP FOR TRADING BOT
+==================================
+
+HOW TO FIX THE ERROR: Missing required environment variable: ALPACA_API_KEY
+--------------------------------------------------------------------------
+This error happens because the trading bot requires several environment variables to be set in a .env file.
+
+STEP 1: Create .env file
+------------------------
+Copy the contents of .env.template to a new file called .env in the same directory:
+
+> copy .env.template .env
+
+STEP 2: Add your credentials
+---------------------------
+Edit the .env file and replace the placeholder values with your actual API keys:
+
+- ALPACA_API_KEY: Your Alpaca API key
+- ALPACA_SECRET_KEY: Your Alpaca API secret
+- NEWS_API_KEY (optional): Your News API key if you have one
+- Email settings (if you want email notifications)
+
+STEP 3: Start the bot
+--------------------
+After setting up the environment variables, run:
+
+> npm start
+
+Railway Deployment Quick Notes:
+------------------------------
+1. Add all the environment variables in Railway dashboard
+2. Make sure to set NODE_ENV=production
+3. The bot will start automatically on deployment
+
+Note about API URLs:
+------------------
+- Make sure ALPACA_BASE_URL and ALPACA_DATA_URL are correct:
+  - ALPACA_BASE_URL should be https://paper-api.alpaca.markets/v2
+  - ALPACA_DATA_URL should be https://data.alpaca.markets/v2
+  
+For the issue with the current URLs in .env.template, edit them to add the '/v2' path.
